@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package simplebackend;
+
+service Event {
+  rpc CreateEvent(EventRequest) returns (Response) {}
+  rpc Subscribe(SubscriptionRequest) returns (stream EventUpdatedResponse) {}
+}
+
+service Authentication {
+  rpc GetAccessToken(AccessTokenRequest) returns (AccessTokenResponse) {}
+}
+
+message EventRequest {
+  string modelType = 1;
+  string modelId = 2;
+  string eventName = 3;
+  string eventParametersJson = 4;
+  EventOptions eventOptions = 5;
+}
+
+message EventOptions {
+  bool dryRun = 1;
+}
+
+message Response {
+  string responseJson = 1;
+}
+
+message SubscriptionRequest {
+}
+
+message EventUpdatedResponse {
+  string type = 1;
+  string id = 2;
+  int64 timestamp = 3;
+}
+
+service Query {
+  rpc Query(QueryRequest) returns (Response);
+}
+
+message QueryRequest {
+  string view = 1;
+  map<string, string> parameters = 2;
+}
+
+message AccessTokenRequest {
+  string externalToken = 1;
+  string provider = 2;
+  string publicKeyId = 3;
+}
+
+message AccessTokenResponse {
+  string accessToken = 1;
+}
