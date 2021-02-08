@@ -13,7 +13,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import lib.*
 import simplebackend.EventGrpcKt
 import simplebackend.Simplebackend.*
 import simplebackend.lib.MigrationAction.*
@@ -197,9 +196,9 @@ class EventService<E : IEvent>(
                 if (userIdentity == null) {
                     throw RuntimeException()
                 }
-                val preventMessages = stateMachine.preventedByGuards(event, userIdentity, modelView)
-                if (preventMessages.isNotEmpty()) {
-                    return Left(Problem.preventedByGuard(preventMessages))
+                val failedGuards = stateMachine.preventedByGuards(event, userIdentity, modelView)
+                if (failedGuards.isNotEmpty()) {
+                    return Left(Problem.preventedByGuard(failedGuards))
                 }
             }
 

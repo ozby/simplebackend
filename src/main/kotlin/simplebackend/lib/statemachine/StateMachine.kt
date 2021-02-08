@@ -67,7 +67,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         return if (transition == null) false else true
     }
 
-    internal fun preventedByGuards(event: E, userIdentity: UserIdentity, view: IModelView<*>): List<String> {
+    internal fun preventedByGuards(event: E, userIdentity: UserIdentity, view: IModelView<*>): List<BlockedByGuard> {
         view as IModelView<T>
         val modelId = event.modelId
         val model: Model<T>? =

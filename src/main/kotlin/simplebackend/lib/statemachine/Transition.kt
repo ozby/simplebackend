@@ -11,7 +11,7 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val tri
     private lateinit var effectUpdateModelFunction: (Model<T>, EventParams) -> T
     private var model: T? = null
 
-    private val guardFunctions: MutableList<(Model<T>?, E, UserIdentity) -> String?> = mutableListOf()
+    private val guardFunctions: MutableList<(Model<T>?, E, UserIdentity) -> BlockedByGuard?> = mutableListOf()
 
     fun effectCreateModel(f: (EventParams) -> T) {
         effectCreateModelFunction = f
@@ -21,7 +21,7 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val tri
         effectUpdateModelFunction = f
     }
 
-    fun guard(guard: (Model<T>?, E, UserIdentity) -> String?) {
+    fun guard(guard: (Model<T>?, E, UserIdentity) -> BlockedByGuard?) {
         guardFunctions.add(guard)
     }
 
@@ -74,7 +74,7 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val tri
     /**
      * Returns a list of problems. If the list is empty, all guards were passed
      */
-    internal fun verifyGuard(event: E, model: Model<T>?, userIdentity: UserIdentity): List<String> {
+    internal fun verifyGuard(event: E, model: Model<T>?, userIdentity: UserIdentity): List<BlockedByGuard> {
         return guardFunctions.map { it(model, event, userIdentity) }.filterNotNull()
     }
 

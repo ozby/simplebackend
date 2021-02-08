@@ -90,3 +90,5 @@ enum class MigrationAction {        // TODO: try using sealed classes instead so
 interface IWithResponseMapper<T : ModelProperties> {
     fun toJsonResponse(model: Model<T>): JsonString
 }
+
+data class BlockedByGuard(val message: String)

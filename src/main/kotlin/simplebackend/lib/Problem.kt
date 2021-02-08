@@ -17,8 +17,8 @@ class Problem(private val grpcStatus: Status, private val message: String = "") 
                 "The model is not in a state where there is a transition that can be triggered by '$eventName'"
             )
 
-        fun preventedByGuard(failedGuards: List<String>): Problem =
-            Problem(Status.FAILED_PRECONDITION, failedGuards.joinToString(". "))
+        fun preventedByGuard(failedGuards: List<BlockedByGuard>): Problem =
+            Problem(Status.FAILED_PRECONDITION, failedGuards.joinToString(", ") { it.message })
     }
 
     override fun toString(): String {

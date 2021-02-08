@@ -1,6 +1,6 @@
 # A Simple Backend
 
-This is an experiment on how you can build a backend in Kotlin while avoiding as much complexity as possible.
+Simple Backend is a framework for building backend in Kotlin while avoiding as much complexity as possible.
 
 ## Overview
 
@@ -55,17 +55,18 @@ depending on your application.
 That said, it is also true that complex systems are more error-prone than simple systems. Also, uptime can be improved by hosting the application in a Tier IV
 datacenter (99.995% uptime).
 
-In the future, we may allow more complex configurations (e.g. master-slave) that would enable redundancy.
+In the future, we may allow more complex configurations that would enable redundancy.
 
 ## Details
 
-### Authentication:
+### Authentication
 
-The authentication flow is 1) sign in with Google, 2) send the Google-JWT to autoserver, 3) the Google-JWT is verified, 4) the server returns a new JWT that
+The authentication flow is 1) sign in with Google, 2) send the Google-JWT to SimpleBackend, 3) the Google-JWT is verified, 4) the server returns a new JWT that
 contains the subject from Google's JWT (i.e. the user ID that you have at Google). Most applications will want to have more information than that they will have
 a User model that corresponds to the subject.
 
-### Authorization:
+### Authorization
 
 You must provide an implementation of the Authorizer interface. One straight forward way is Role Based Access Control where you check if a specific role is
 stored on a User model. Just remember to verify updates on the User model so that the user cannot set the roles himself.
+
