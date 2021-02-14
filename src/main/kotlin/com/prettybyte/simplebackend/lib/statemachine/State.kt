@@ -6,18 +6,19 @@ import com.prettybyte.simplebackend.lib.ModelProperties
 
 class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: String) {
 
-    private val transitionList = mutableListOf<Transition<T, E, ModelStates>>()
+    internal val transitions = mutableListOf<Transition<T, E, ModelStates>>()
     private val enterActions: MutableList<(Model<T>?, E) -> Unit> = mutableListOf()
     private val exitActions: MutableList<(Model<T>?, E) -> Unit> = mutableListOf()
 
     fun transition(
-        triggeredByEvent: String,
+        triggeredByEvent: String? = null,
+        triggeredIf: ((T) -> Boolean)? = null,
         targetState: ModelStates,
         init: Transition<T, E, ModelStates>.() -> Unit
     ) {  // TODO: triggeredByEvent should be E
-        val transition = Transition<T, E, ModelStates>(triggeredByEvent, targetState)
+        val transition = Transition<T, E, ModelStates>(triggeredByEvent, triggeredIf, targetState)
         transition.init()
-        transitionList.add(transition)
+        transitions.add(transition)
     }
 
     fun enterAction(f: (Model<T>?, E) -> Unit) {
@@ -47,15 +48,12 @@ class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: St
     }
 
     internal fun getTransitionForEvent(event: IEvent): Transition<T, E, ModelStates>? {
-        return transitionList.firstOrNull() { it.canBeTriggeredByEvent(event) }
-    }
-
-    internal fun getAllTransitions(): Set<String> {
-        return transitionList.map { it.trigger }.toSet()
+        return transitions.firstOrNull() { it.canBeTriggeredByEvent(event) }
     }
 
     internal fun isInitialState(): Boolean {
         return name == initial
     }
+
 
 }

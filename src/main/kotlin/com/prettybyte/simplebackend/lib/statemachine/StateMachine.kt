@@ -11,7 +11,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
 
     val onStateChangeListeners: MutableList<in suspend (Model<T>) -> Unit> = mutableListOf<suspend (Model<T>) -> Unit>()
     private lateinit var currentState: State<T, E, ModelStates>
-    private val normalStateList = mutableListOf<State<T, E, ModelStates>>()
+    internal val states = mutableListOf<State<T, E, ModelStates>>()
     private lateinit var initialState: State<T, E, ModelStates>
 
     fun initialState(init: State<T, E, ModelStates>.() -> Unit) {
@@ -23,12 +23,12 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
     fun state(modelState: ModelStates, init: State<T, E, ModelStates>.() -> Unit) {
         val state = State<T, E, ModelStates>(modelState.name)
         state.init()
-        normalStateList.add(state)
+        states.add(state)
         // TODO: verify that all states have unique names
     }
 
     private fun getStateByName(name: String): State<T, E, ModelStates> {
-        val result = normalStateList.firstOrNull { it.name == name }
+        val result = states.firstOrNull { it.name == name }
             ?: throw NoSuchElementException(name)
         return result
     }
@@ -47,9 +47,23 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         val newState = transition.enterTransition(isDryRun) { getStateByName(it.name) }
 
         currentState.exitState(performActions, model, event)
-        val updatedModel = transition.executeEffect(model, event.getParams(), event.modelType, newState, event, view, isDryRun)
+        var updatedModel = transition.executeEffect(model, event.getParams(), event.modelType, newState, event, view, isDryRun)
 
-        newState.enterState(performActions, model, event)
+        newState.enterState(!isDryRun && performActions, model, event)
+
+        // Is there any transition that triggers automatically?
+        val autoTransition = newState.transitions.filter { it.triggeredIf != null && it.triggeredIf.invoke(updatedModel.properties) }.firstOrNull()
+        if (autoTransition != null) {   // TODO: must allow any number of automatic transitions
+            autoTransition.currentState = newState
+            val newerState = autoTransition.enterTransition(isDryRun) { getStateByName(it.name) }
+            newState.exitState(performActions, model, event)
+            updatedModel = autoTransition.executeEffect(model, event.getParams(), event.modelType, newerState, event, view, isDryRun)
+            newerState.enterState(!isDryRun && performActions, model, event)
+
+            // TODO:   Tror det är bäst att State och Transition endast ska hålla data och flytta all logik till denna klassen.Svårt att få översikt annars.
+
+
+        }
 
         return Right(updatedModel)
     }
@@ -79,18 +93,13 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
 
     private fun getAllStates(): Set<State<T, E, ModelStates>> {
         val allStates = HashSet<State<T, E, ModelStates>>()
-        allStates.addAll(normalStateList)
+        allStates.addAll(states)
         allStates.add(initialState)
         return allStates
     }
 
     internal fun handlesType(type: KClass<Model<T>>): Boolean {
         return type == thisType
-    }
-
-    internal fun getAcceptableEvents(model: Any): Set<String> {
-        currentState = if (model == null) initialState else getStateByName((model as Model<T>).state)
-        return currentState.getAllTransitions()
     }
 
     fun onStateChange(f: suspend (Model<T>) -> Unit) {
@@ -103,6 +112,7 @@ inline fun <reified T : ModelProperties, E : IEvent, ModelStates : Enum<*>> stat
     // TODO: validate that all states are reachable?
     val stateMachine = StateMachine<T, E, ModelStates>(T::class)
     stateMachine.init()
+    // TODO: make sure all states are declared (stateMachine.states == ModelStates)
     return stateMachine
 }
 
