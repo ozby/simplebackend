@@ -1,8 +1,8 @@
-package simplebackend.lib.statemachine;
+package com.prettybyte.simplebackend.lib.statemachine;
 
 import arrow.core.Either
 import arrow.core.Right
-import simplebackend.lib.*
+import com.prettybyte.simplebackend.lib.*
 import kotlin.reflect.KClass
 
 const val initial = "initial"

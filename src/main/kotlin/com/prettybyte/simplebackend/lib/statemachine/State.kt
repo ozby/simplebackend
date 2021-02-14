@@ -1,8 +1,8 @@
-package simplebackend.lib.statemachine;
+package com.prettybyte.simplebackend.lib.statemachine;
 
-import simplebackend.lib.IEvent
-import simplebackend.lib.Model
-import simplebackend.lib.ModelProperties
+import com.prettybyte.simplebackend.lib.IEvent
+import com.prettybyte.simplebackend.lib.Model
+import com.prettybyte.simplebackend.lib.ModelProperties
 
 class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: String) {
 
@@ -10,7 +10,11 @@ class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: St
     private val enterActions: MutableList<(Model<T>?, E) -> Unit> = mutableListOf()
     private val exitActions: MutableList<(Model<T>?, E) -> Unit> = mutableListOf()
 
-    fun transition(triggeredByEvent: String, targetState: ModelStates, init: Transition<T, E, ModelStates>.() -> Unit) {  // TODO: triggeredByEvent should be E
+    fun transition(
+        triggeredByEvent: String,
+        targetState: ModelStates,
+        init: Transition<T, E, ModelStates>.() -> Unit
+    ) {  // TODO: triggeredByEvent should be E
         val transition = Transition<T, E, ModelStates>(triggeredByEvent, targetState)
         transition.init()
         transitionList.add(transition)

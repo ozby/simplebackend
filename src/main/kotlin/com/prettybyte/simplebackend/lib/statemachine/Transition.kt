@@ -1,6 +1,6 @@
-package simplebackend.lib.statemachine
+package com.prettybyte.simplebackend.lib.statemachine
 
-import simplebackend.lib.*
+import com.prettybyte.simplebackend.lib.*
 
 class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val trigger: String, val targetState: ModelStates) {
 

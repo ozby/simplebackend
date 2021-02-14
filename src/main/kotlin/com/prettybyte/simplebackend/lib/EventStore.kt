@@ -1,8 +1,8 @@
-package simplebackend.lib
+package com.prettybyte.simplebackend.lib
 
+import com.prettybyte.simplebackend.DatabaseConnection
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
-import simplebackend.DatabaseConnection
 import java.time.Instant
 
 class EventStore<E : IEvent>(

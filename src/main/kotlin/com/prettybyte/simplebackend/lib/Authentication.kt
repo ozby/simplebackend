@@ -1,5 +1,6 @@
-package simplebackend.lib
+package com.prettybyte.simplebackend.lib
 
+/*
 import io.grpc.*
 import io.grpc.kotlin.CoroutineContextServerInterceptor
 import io.grpc.kotlin.GrpcContextElement
@@ -171,20 +172,6 @@ class AuthenticationService<E : IEvent>(private val authorizer: IAuthorizer<E>) 
     }
 }
 
-data class UserIdentity(val id: String) {
-
-    companion object {
-        fun fromTest(name: String): UserIdentity {
-            return UserIdentity(id = name)
-        }
-
-        fun fromJws(jws: Jws<Claims>): UserIdentity {
-            return UserIdentity(id = jws.body.subject)
-        }
-    }
-
-}
-
 @Serializable
 data class GoogleKeys(val keys: List<GoogleKey>)
 
@@ -196,3 +183,5 @@ data class GoogleKey(val e: String, val n: String, val alg: String, val use: Str
         return KeyFactory.getInstance("RSA").generatePublic(RSAPublicKeySpec(modulus, exponent))
     }
 }
+
+ */

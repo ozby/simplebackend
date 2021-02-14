@@ -1,10 +1,10 @@
-package simplebackend.lib
+package com.prettybyte.simplebackend.lib
 
 import arrow.core.Either
+import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
 import kotlinx.serialization.Serializable
-import simplebackend.lib.statemachine.StateMachine
 import kotlin.reflect.KClass
 
 data class ManagedModel<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(

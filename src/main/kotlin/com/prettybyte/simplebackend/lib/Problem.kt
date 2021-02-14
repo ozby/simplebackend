@@ -1,10 +1,14 @@
-package simplebackend.lib
+package com.prettybyte.simplebackend.lib
 
-import io.grpc.Status
+enum class Status {
+    INVALID_ARGUMENT,
+    FAILED_PRECONDITION,
+    NOT_FOUND
+}
 
-class Problem(private val grpcStatus: Status, private val message: String = "") {
+class Problem(private val status: Status, private val message: String = "") {
 
-    fun toGrpcException(): Exception = grpcStatus.withDescription(message).asRuntimeException()
+    fun asException(): Exception = RuntimeException(message)
 
     companion object {
 

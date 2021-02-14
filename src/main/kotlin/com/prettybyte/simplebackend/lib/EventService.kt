@@ -1,23 +1,20 @@
-package simplebackend.lib
+package com.prettybyte.simplebackend.lib
 
 import arrow.core.Either
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import arrow.core.Left
-import io.grpc.Status
+import com.prettybyte.simplebackend.lib.MigrationAction.*
+import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import simplebackend.EventGrpcKt
-import simplebackend.Simplebackend.*
-import simplebackend.lib.MigrationAction.*
-import simplebackend.lib.statemachine.StateMachine
-import simplebackend.logAndMakeInternalException
+import simplebackend.Simplebackend
 import java.time.Instant
 import kotlin.reflect.KFunction1
 import kotlin.system.exitProcess
@@ -27,7 +24,6 @@ import kotlin.system.exitProcess
 class EventService<E : IEvent>(
     private val eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,
     private val eventStore: EventStore<E>,
-    private val authorizer: IAuthorizer<E>,
     private val stateMachineProvider: KFunction1<String, StateMachine<*, E, *>>,
     private val modelViewProvider: (String) -> IModelView<*>,
     private val json: Json,
@@ -35,7 +31,7 @@ class EventService<E : IEvent>(
     private val managedModels: Set<ManagedModel<*, E, *>>,
 ) : EventGrpcKt.EventCoroutineImplBase() {
 
-    private val stateFlow: MutableStateFlow<EventUpdatedResponse> = MutableStateFlow(EventUpdatedResponse.newBuilder().build())
+    private val stateFlow: MutableStateFlow<Simplebackend.EventUpdatedResponse> = MutableStateFlow(Simplebackend.EventUpdatedResponse.newBuilder().build())
 
     internal fun start() {
         migrateObsoleteEvents()
@@ -124,7 +120,7 @@ class EventService<E : IEvent>(
         }
     }
 
-    override suspend fun createEvent(request: EventRequest): Response {
+/*     suspend fun createEvent(request: EventRequest): Response {
         try {
             val userIdentity = ctx.call {
                 return@call userIdentityKey.get()
@@ -150,26 +146,12 @@ class EventService<E : IEvent>(
         }
     }
 
-    private fun validateParams(event: E) {
-        try {
-            event.getParams()
-        } catch (e: Exception) {
-            throw Status.INVALID_ARGUMENT.withDescription("At least one parameter is invalid or missing for event ${event.name}. The request contained these parameters: '${event.params}'  ${e.message}")
-                .asRuntimeException()
-        }
-    }
+ */
 
-    override fun subscribe(request: SubscriptionRequest): Flow<EventUpdatedResponse> {
-        try {
-            ctx.call {
-                if (!authorizer.isAllowedToSubscribeToEvents(userIdentityKey.get())) {
-                    throw Status.PERMISSION_DENIED.asRuntimeException()
-                }
-            }
-            return stateFlow
-        } catch (e: Exception) {
-            throw logAndMakeInternalException(e)
-        }
+
+    override fun subscribe(request: Simplebackend.SubscriptionRequest): Flow<Simplebackend.EventUpdatedResponse> {
+        println("Client subscribed")
+        return stateFlow
     }
 
     private val mutex = Mutex()
@@ -218,11 +200,13 @@ class EventService<E : IEvent>(
                     }
                     if (updatedModel.b != null && !dryRun) {
                         stateFlow.value =
-                            EventUpdatedResponse.newBuilder()
+                            Simplebackend.EventUpdatedResponse.newBuilder()
                                 .setType(event.modelType)
                                 .setId(updatedModel.b!!.id)
                                 .setTimestamp(Instant.now().toEpochMilli())
                                 .build()
+
+
                     }
                     return updatedModel
                 }

@@ -1,5 +1,6 @@
-package simplebackend.lib
+package com.prettybyte.simplebackend.lib
 
+/*
 import arrow.core.Either
 import io.grpc.Status
 import simplebackend.QueryGrpcKt
@@ -75,3 +76,6 @@ class QueryService<E : IEvent>(
     }
 
 }
+
+
+ */
