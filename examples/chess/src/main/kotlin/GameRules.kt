@@ -1,8 +1,8 @@
-import kotlinx.coroutines.delay
-import com.prettybyte.simplebackend.lib.statemachine.State
 import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.*
+import kotlinx.coroutines.delay
 import statemachines.GameStates
+import views.UserView
 
 const val white = true
 const val black = false
@@ -40,6 +40,11 @@ object GameRules {
         }
 
         val pieceToMove = game.pieces[squareToIndex(from)]
+
+        if (isPlayerMovingOtherPlayersPiece(userIdentity, pieceToMove, game)) {
+            return BlockedByGuard("You can only move your own pieces")
+        }
+
         val legal = when (pieceToMove) {
             "wp" -> isLegalPawnMove(white, from, to, game.pieces)
             else -> true
@@ -55,6 +60,15 @@ object GameRules {
         val column = from[0]
         val row = from.substring(1).toInt()
         return "abcdefgh".contains(column) && row > 0 && row < 8
+    }
+
+    private fun isPlayerMovingOtherPlayersPiece(userIdentity: UserIdentity, pieceToMove: String, game: Game): Boolean {
+        if (userIdentity.id == computerPlayer) {
+            return false
+        }
+        val user = UserView.get(userIdentity) ?: return true
+        return pieceToMove.startsWith("w") && game.whitePlayerId != user.id ||
+                pieceToMove.startsWith("b") && game.blackPlayerId != user.id
     }
 
     fun squareToIndex(from: String): Int {
@@ -91,10 +105,6 @@ object GameRules {
             whitePlayerId = model.properties.whitePlayerId,
             blackPlayerId = model.properties.blackPlayerId
         )
-    }
-
-    fun isGameOver(): State<Game, Event, GameStates>? {
-        return null
     }
 
     fun isWhiteCheckMate(game: Game): Boolean {
