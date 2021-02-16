@@ -57,7 +57,7 @@ object GameRules {
         return "abcdefgh".contains(column) && row > 0 && row < 8
     }
 
-    private fun squareToIndex(from: String): Int {
+    fun squareToIndex(from: String): Int {
         val column = from.first()
         val row = from.substring(1).toInt()
         return (row - 1) * 8 + "abcdefgh".indexOfFirst { it == column }

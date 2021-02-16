@@ -25,7 +25,7 @@ repositories {
 }
 
 dependencies {
-    implementation(files("../simplebackend/build/libs/simplebackend-0.1.0.jar"))
+    implementation(files("../../build/libs/simplebackend-0.1.0.jar"))
     // TODO: Don't want this all these dependencies. Why are they needed?
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
     implementation("io.jsonwebtoken:jjwt-api:0.11.2")

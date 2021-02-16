@@ -65,7 +65,6 @@ interface IAuthorizer<E : IEvent> {
      */
     fun onExchangeJWT(jws: Jws<Claims>): Problem?
 
-    fun isAllowedToQuery(userIdentity: UserIdentity, view: IQueryView, parameters: Map<String, String>): Boolean
     fun isAllowedToCreateEvent(userIdentity: UserIdentity, event: E): Boolean
     fun isAllowedToSubscribeToEvents(userIdentity: UserIdentity): Boolean
 }

@@ -47,14 +47,6 @@ object Authorizer : IAuthorizer<Event> {
         }
     }
 
-    override fun isAllowedToQuery(userIdentity: UserIdentity, view: IQueryView, parameters: Map<String, String>): Boolean {
-        return when (view) {
-            is GameView -> hasRole(viewer, userIdentity)
-            is UserView -> hasRole(viewer, userIdentity)
-            else -> false
-        }
-    }
-
     override fun isAllowedToSubscribeToEvents(userIdentity: UserIdentity): Boolean {
         return true
     }
