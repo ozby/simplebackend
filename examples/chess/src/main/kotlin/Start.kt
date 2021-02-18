@@ -3,10 +3,10 @@ import com.prettybyte.simplebackend.DatabaseConnection
 import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.ManagedModel
 import com.prettybyte.simplebackend.lib.ModelProperties
+import graphql.GameQueryService
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
-import schema.GameQueryService
 import statemachines.createGameStateMachine
 import statemachines.userStateMachine
 import views.GameView
@@ -33,7 +33,7 @@ fun main() {
                 subclass(User::class)
             }
         },
-        customGraphqlPackages = listOf("schema"),
+        customGraphqlPackages = listOf("graphql"),
         customQueries = listOf(TopLevelObject(GameQueryService()))
     )
     GameRules.simpleBackend = simpleBackend

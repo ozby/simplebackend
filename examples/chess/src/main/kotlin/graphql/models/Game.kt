@@ -1,11 +1,13 @@
-package schema.models
+package graphql.models
 
 import Game
 import com.prettybyte.simplebackend.lib.Model
 
-data class GraphQLGame(val id: String, val state: String, val pieces: List<String>,
-                val whitePlayerId: String,
-                val blackPlayerId: String) {
+data class GraphQLGame(
+    val id: String, val state: String, val pieces: List<String>,
+    val whitePlayerId: String,
+    val blackPlayerId: String
+) {
     companion object {
         fun fromModel(model: Model<Game>): GraphQLGame {
             return GraphQLGame(

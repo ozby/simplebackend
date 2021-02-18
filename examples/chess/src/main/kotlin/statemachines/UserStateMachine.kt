@@ -11,8 +11,9 @@ import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import com.prettybyte.simplebackend.lib.statemachine.stateMachine
-import views.UserView
+import statemachines.UserStates.active
 import systemUserIdentity
+import views.UserView
 
 const val createUser = "CreateUser"
 const val deleteUser = "DeleteUser"
@@ -25,14 +26,14 @@ enum class UserStates {
 fun userStateMachine(): StateMachine<User, Event, UserStates> =
     stateMachine {
         initialState {
-            transition(triggeredByEvent = createUser, targetState = UserStates.active) {
+            transition(triggeredByEvent = createUser, targetState = active) {
                 guard(::createdByCorrectIdentity)
                 guard(::userNotAlreadyCreated)
                 effectCreateModel(::newUser)
             }
         }
 
-        state(UserStates.active) {
+        state(active) {
             enterAction(::sendWelcomeEmail)
             transition(triggeredByEvent = deleteUser, targetState = UserStates.deleted) {
                 // effectDeleteModel()

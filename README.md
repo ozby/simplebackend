@@ -43,7 +43,7 @@ TiB RAM).
 ## Scalability
 
 Since the design goal is simplicity, there should only be one instance of SimpleBackend. This means that SimpleBackend can only be scaled vertically. Computers
-are pretty fast these days and SimpleBackend should be quite performant so it is likely that one instance will be enough for most systems.
+are pretty fast these days and SimpleBackend should be quite performant, so it is likely that one instance will be enough for most systems.
 
 In the future, we may allow more complex configurations that would enable horizontal scalability.
 
@@ -57,16 +57,25 @@ datacenter (99.995% uptime).
 
 In the future, we may allow more complex configurations that would enable redundancy.
 
-## Details
+## Authentication
 
-### Authentication
+Currently, only Google Sign-In is supported. The client should acquire a JWT from Google and that JWT should be set in the 'Authorization' header
+(as "Bearer ..."). In your application, you can access a UserIdentity object which will contain "subject" from the JWT. Most applications will want to have more
+information about the user than that, so they will have a User model that corresponds to the subject.
 
-The authentication flow is 1) sign in with Google, 2) send the Google-JWT to SimpleBackend, 3) the Google-JWT is verified, 4) the server returns a new JWT that
-contains the subject from Google's JWT (i.e. the user ID that you have at Google). Most applications will want to have more information than that they will have
-a User model that corresponds to the subject.
-
-### Authorization
+## Authorization
 
 You must provide an implementation of the Authorizer interface. One straight forward way is Role Based Access Control where you check if a specific role is
 stored on a User model. Just remember to verify updates on the User model so that the user cannot set the roles himself.
 
+## GraphQL
+
+To modify the data on the server, you will use a GraphQL mutation ("createEvent") which is built in.
+
+To query the backend, you GraphQL queries are used (you will build these yourself).
+
+At the moment, gRPC is used to manage subscribe to events (this will be handled with GraphQL in the future).
+
+## What if I need more than SimpleBackend can provide?
+
+It is possible to provide custom queries and modifications when configuring SimpleBackend, giving you full control.

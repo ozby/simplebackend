@@ -1,7 +1,7 @@
-package schema
+package graphql
 
 import com.expediagroup.graphql.types.operations.Query
-import schema.models.GraphQLGame
+import graphql.models.GraphQLGame
 import views.GameView
 
 class GameQueryService : Query {
