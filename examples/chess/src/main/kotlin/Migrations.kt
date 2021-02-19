@@ -1,9 +1,10 @@
+import com.prettybyte.simplebackend.lib.*
+import com.prettybyte.simplebackend.lib.MigrationAction.keepAsItIs
+import com.prettybyte.simplebackend.lib.MigrationAction.migrate
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import com.prettybyte.simplebackend.lib.*
-import com.prettybyte.simplebackend.lib.MigrationAction.*
 
 object Migrations : IMigrations<Event> {
 
@@ -33,7 +34,6 @@ object Migrations : IMigrations<Event> {
 
 sealed class ObsoleteEvents(
     override val schemaVersion: Int,
-    override val modelType: String,
     override val modelId: String?,
     override val name: String,
     override val params: String,
@@ -43,7 +43,6 @@ sealed class ObsoleteEvents(
 class CreateGameV1(gameId: String, params: String, userIdentityId: String) : ObsoleteEvents(
     schemaVersion = 1,
     name = createGame,
-    modelType = "Game",
     modelId = gameId,
     params = params,
     userIdentityId = userIdentityId

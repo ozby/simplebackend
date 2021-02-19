@@ -4,7 +4,7 @@ import Authorizer.Roles.editor
 import Authorizer.Roles.viewer
 import CreateUserParams
 import Event
-import User
+import UserProperties
 import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.EventParams
 import com.prettybyte.simplebackend.lib.Model
@@ -23,7 +23,7 @@ enum class UserStates {
     deleted,
 }
 
-fun userStateMachine(): StateMachine<User, Event, UserStates> =
+fun userStateMachine(): StateMachine<UserProperties, Event, UserStates> =
     stateMachine {
         initialState {
             transition(triggeredByEvent = createUser, targetState = active) {
@@ -42,14 +42,14 @@ fun userStateMachine(): StateMachine<User, Event, UserStates> =
 
     }
 
-fun userNotAlreadyCreated(model: Model<User>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+fun userNotAlreadyCreated(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
     if (UserView.get(userIdentity) != null) {
         return BlockedByGuard("User already exist")
     }
     return null
 }
 
-fun createdByCorrectIdentity(model: Model<User>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+fun createdByCorrectIdentity(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
     if (userIdentity == systemUserIdentity) {
         return null
     }
@@ -59,11 +59,16 @@ fun createdByCorrectIdentity(model: Model<User>?, event: Event, userIdentity: Us
     return null
 }
 
-fun newUser(eventParams: EventParams): User {
+fun newUser(eventParams: EventParams): UserProperties {
     eventParams as CreateUserParams
-    return User(userIdentityId = eventParams.userIdentityId, firstName = eventParams.firstName, lastName = eventParams.lastName, roles = setOf(viewer, editor))
+    return UserProperties(
+        userIdentityId = eventParams.userIdentityId,
+        firstName = eventParams.firstName,
+        lastName = eventParams.lastName,
+        roles = setOf(viewer, editor)
+    )
 }
 
-fun sendWelcomeEmail(model: Model<User>?, event: Event): Unit {
+fun sendWelcomeEmail(model: Model<UserProperties>?, event: Event): Unit {
     println("Sending welcome email (not implemented)")
 }

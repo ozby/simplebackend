@@ -17,7 +17,7 @@ class GameRulesTest {
     val user1 = Model(
         id = user1Id,
         state = UserStates.active.name,
-        properties = User(firstName = "Adam", lastName = "Adamsson", roles = emptySet(), userIdentityId = userIdentityId1)
+        properties = UserProperties(firstName = "Adam", lastName = "Adamsson", roles = emptySet(), userIdentityId = userIdentityId1)
     )
     val gameId = "gameId"
 

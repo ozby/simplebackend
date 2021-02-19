@@ -1,31 +1,31 @@
 package views
 
 import Event
-import Game
+import GameProperties
 import arrow.core.Either
 import arrow.core.Left
 import arrow.core.Right
+import com.prettybyte.simplebackend.SimpleBackend
+import com.prettybyte.simplebackend.lib.*
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import com.prettybyte.simplebackend.SimpleBackend
-import com.prettybyte.simplebackend.lib.*
 import kotlin.reflect.KClass
 
-object GameView : IModelView<Game>, IQueryView {
+object GameView : IModelView<GameProperties>, IQueryView {
 
     lateinit var simpleBackend: SimpleBackend<Event>
-    private val games = HashMap<String, Model<Game>>()
+    private val games = HashMap<String, Model<GameProperties>>()
 
-    override fun get(id: String): Model<Game>? {
+    override fun get(id: String): Model<GameProperties>? {
         return games[id]
     }
 
-    override fun create(model: Model<Game>) {
+    override fun create(model: Model<GameProperties>) {
         games[model.id] = model
     }
 
-    override fun update(new: Model<Game>) {
+    override fun update(new: Model<GameProperties>) {
         games[new.id] = new
     }
 
@@ -52,7 +52,7 @@ object GameView : IModelView<Game>, IQueryView {
         return Left(Problem(Status.INVALID_ARGUMENT, "Invalid query"))
     }
 
-    fun getAll(): List<Model<Game>> {
+    fun getAll(): List<Model<GameProperties>> {
         return games.values.toList()
     }
 
@@ -68,7 +68,7 @@ data class GameResponse(
     val blackPlayerName: String,
 ) {
     companion object {
-        fun from(game: Model<Game>): GameResponse =
+        fun from(game: Model<GameProperties>): GameResponse =
             GameResponse(
                 id = game.id,
                 state = game.state,

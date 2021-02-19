@@ -24,7 +24,7 @@ import kotlin.system.exitProcess
 class EventService<E : IEvent>(
     private val eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,
     private val eventStore: EventStore<E>,
-    private val stateMachineProvider: KFunction1<String, StateMachine<*, E, *>>,
+    private val stateMachineProvider: KFunction1<IEvent, StateMachine<*, E, *>>,
     private val modelViewProvider: (String) -> IModelView<*>,
     private val json: Json,
     private val migrations: IMigrations<E>?,
@@ -167,9 +167,9 @@ class EventService<E : IEvent>(
         notifyListeners: Boolean = true,
     ): Either<Problem, Model<out ModelProperties>?> {
         mutex.withLock {
-            val modelView = modelViewProvider(event.modelType)
-            val stateMachine = stateMachineProvider(event.modelType)  // one event may trigger many state machines ??
+            val stateMachine = stateMachineProvider(event)  // one event may trigger many state machines ??
 
+            val modelView = stateMachine.modelView
             if (!stateMachine.transitionExists(event, modelView)) {
                 return Left(Problem.noTransitionAvailableForEvent(event.name))
             }
@@ -189,26 +189,25 @@ class EventService<E : IEvent>(
                 eventStore.store(event, eventParametersJson)    // TODO: ugly!
             }
 
-            val updatedModel = stateMachine.eventOccurred(event, isDryRun = dryRun, performActions = performActions, modelView)
-            when (updatedModel) {
-                is Left -> return updatedModel
+            val eventResult = stateMachine.eventOccurred(event, isDryRun = dryRun, performActions = performActions, modelView)
+            when (eventResult) {
+                is Left -> return eventResult
                 is Right -> {
+                    val updatedModel = eventResult.b ?: return eventResult
                     if (notifyListeners && !dryRun) {
                         GlobalScope.launch {
-                            stateMachine.onStateChangeListeners.forEach { (it as suspend (Model<out ModelProperties>) -> Unit)(updatedModel.b!!) }
+                            stateMachine.onStateChangeListeners.forEach { (it as suspend (Model<out ModelProperties>) -> Unit)(updatedModel) }
                         }
                     }
-                    if (updatedModel.b != null && !dryRun) {
+                    if (!dryRun) {
                         stateFlow.value =
                             Simplebackend.EventUpdatedResponse.newBuilder()
-                                .setType(event.modelType)
-                                .setId(updatedModel.b!!.id)
+                                .setType(updatedModel.graphQlName)
+                                .setId(updatedModel.id)
                                 .setTimestamp(Instant.now().toEpochMilli())
                                 .build()
-
-
                     }
-                    return updatedModel
+                    return eventResult
                 }
             }
         }

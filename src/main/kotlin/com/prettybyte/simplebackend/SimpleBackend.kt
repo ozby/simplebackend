@@ -44,6 +44,11 @@ class SimpleBackend<E : IEvent>(
     // TODO 1.0: https://www.baeldung.com/kotlin/builder-pattern
 
     init {
+
+        // TODO 1.0: validate that the provided ModelProperties classes are named "xProperties" e.g. GameProperties.
+
+        managedModels.forEach { it.stateMachine.setView(it.view) }
+
         eventStore = EventStore(databaseConnection, eventParser)
         eventService = EventService(eventParser, eventStore, ::stateMachineProvider, ::modelViewProvider, json, migrations, managedModels)
         grpcServer =
@@ -85,8 +90,9 @@ class SimpleBackend<E : IEvent>(
         return managedModels.find { it.kClass.simpleName == modelType }?.view ?: throw RuntimeException("Can't find model view for type '$modelType'")
     }
 
-    private fun stateMachineProvider(modelType: String): StateMachine<*, E, *> {
-        return managedModels.find { it.kClass.simpleName == modelType }?.stateMachine ?: throw RuntimeException("Can't find model view for type '$modelType'")
+    private fun stateMachineProvider(event: IEvent): StateMachine<*, E, *> {
+        return managedModels.find { it.stateMachine.canHandle(event) }?.stateMachine
+            ?: throw RuntimeException("Can't find state machine for event '${event.name}'")
     }
 
     fun start() {

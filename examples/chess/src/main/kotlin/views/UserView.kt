@@ -1,27 +1,27 @@
 package views
 
-import User
+import UserProperties
 import arrow.core.Either
 import arrow.core.Left
 import arrow.core.Right
+import com.prettybyte.simplebackend.lib.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import com.prettybyte.simplebackend.lib.*
 import kotlin.reflect.KClass
 
-object UserView : IModelView<User>, IQueryView {
+object UserView : IModelView<UserProperties>, IQueryView {
 
-    private val users = HashMap<String, Model<User>>()
+    private val users = HashMap<String, Model<UserProperties>>()
 
-    override fun get(id: String): Model<User>? {
+    override fun get(id: String): Model<UserProperties>? {
         return users[id]
     }
 
-    override fun create(model: Model<User>) {
+    override fun create(model: Model<UserProperties>) {
         users[model.id] = model
     }
 
-    override fun update(new: Model<User>) {
+    override fun update(new: Model<UserProperties>) {
         users[new.id] = new
     }
 
@@ -38,9 +38,9 @@ object UserView : IModelView<User>, IQueryView {
         return Left(Problem(Status.INVALID_ARGUMENT, "Invalid query"))
     }
 
-    fun get(userIdentity: UserIdentity): Model<User>? = getByUserIdentityId(userIdentity.id)
+    fun get(userIdentity: UserIdentity): Model<UserProperties>? = getByUserIdentityId(userIdentity.id)
 
-    fun getByUserIdentityId(userIdentityId: String): Model<User>? {
+    fun getByUserIdentityId(userIdentityId: String): Model<UserProperties>? {
         return users.values.firstOrNull { it.properties.userIdentityId == userIdentityId }
     }
 

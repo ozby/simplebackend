@@ -17,6 +17,7 @@ data class ManagedModel<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
 data class Model<T : ModelProperties>(
     val id: String,
     val state: String,
+    val graphQlName: String,
     val properties: T,
 )
 
@@ -31,7 +32,6 @@ interface IModelView<T : ModelProperties> {
 
 interface IEvent {
     val schemaVersion: Int
-    val modelType: String
     val modelId: String?
     val name: String
     val params: String
@@ -44,7 +44,6 @@ abstract class EventParams
 
 class RawEvent(
     override val schemaVersion: Int,
-    override val modelType: String,
     override val modelId: String?,
     override val name: String,
     override val params: String,

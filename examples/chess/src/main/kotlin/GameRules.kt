@@ -11,7 +11,7 @@ object GameRules {
 
     lateinit var simpleBackend: SimpleBackend<Event>
 
-    fun isCorrectPlayer(game: Model<Game>?, event: IEvent, userIdentity: UserIdentity): BlockedByGuard? {
+    fun isCorrectPlayer(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity): BlockedByGuard? {
         if (userIdentity.id == computerPlayer) {
             return null
         }
@@ -26,7 +26,7 @@ object GameRules {
         }
     }
 
-    fun validateMove(model: Model<Game>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+    fun validateMove(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
         val params = (event as MakeMove).getParams()
         if (model == null) {
             return BlockedByGuard("Game missing")
@@ -62,7 +62,7 @@ object GameRules {
         return "abcdefgh".contains(column) && row > 0 && row < 8
     }
 
-    private fun isPlayerMovingOtherPlayersPiece(userIdentity: UserIdentity, pieceToMove: String, game: Game): Boolean {
+    private fun isPlayerMovingOtherPlayersPiece(userIdentity: UserIdentity, pieceToMove: String, game: GameProperties): Boolean {
         if (userIdentity.id == computerPlayer) {
             return false
         }
@@ -77,16 +77,16 @@ object GameRules {
         return (row - 1) * 8 + "abcdefgh".indexOfFirst { it == column }
     }
 
-    fun newGame(params: EventParams): Game {
+    fun newGame(params: EventParams): GameProperties {
         params as CreateGameParams
-        return Game(
+        return GameProperties(
             pieces = setupPieces(),
             whitePlayerId = params.whitePlayerUserId,
             blackPlayerId = params.blackPlayerUserId
         )
     }
 
-    fun makeTurn(model: Model<Game>, params: EventParams): Game {
+    fun makeTurn(model: Model<GameProperties>, params: EventParams): GameProperties {
         params as MakeMoveParams
         model.properties
 
@@ -100,18 +100,18 @@ object GameRules {
             newBoard[squareToIndex("f1")] = oldBoard[squareToIndex("h1")]
             newBoard[squareToIndex("h1")] = ""
         }
-        return Game(
+        return GameProperties(
             pieces = newBoard,
             whitePlayerId = model.properties.whitePlayerId,
             blackPlayerId = model.properties.blackPlayerId
         )
     }
 
-    fun isWhiteCheckMate(game: Game): Boolean {
+    fun isWhiteCheckMate(game: GameProperties): Boolean {
         return false
     }
 
-    fun isBlackCheckMate(game: Game): Boolean {
+    fun isBlackCheckMate(game: GameProperties): Boolean {
         return game.pieces[16].isNotEmpty()
     }
 
@@ -183,7 +183,7 @@ object GameRules {
             "br"
         )
 
-    suspend fun makeComputerMove(model: Model<Game>) {
+    suspend fun makeComputerMove(model: Model<GameProperties>) {
         val game = model.properties
         if (model.state != GameStates.waitingForBlack.name) {
             return

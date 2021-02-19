@@ -23,7 +23,6 @@ class EventStore<E : IEvent>(
             Events.insert {
                 it[name] = event.name
                 it[modelId] = event.modelId ?: ""
-                it[modelType] = event.modelType
                 it[params] = eventParametersJson
                 it[timestamp] = Instant.now().epochSecond
                 it[userIdentityId] = event.userIdentityId
@@ -53,7 +52,6 @@ class EventStore<E : IEvent>(
                         modelId = it[Events.modelId],
                         params = it[Events.params],
                         userIdentityId = it[Events.userIdentityId],
-                        modelType = "unknown",
                         schemaVersion = it[Events.schemaVersion],
                         eventId = it[Events.id],
                     )
@@ -73,7 +71,6 @@ class EventStore<E : IEvent>(
             Events.update({ Events.id eq eventId }) {
                 it[name] = migratedEvent.name
                 it[modelId] = migratedEvent.modelId ?: ""
-                it[modelType] = migratedEvent.modelType
                 it[params] = migratedEvent.params
                 it[timestamp] = Instant.now().epochSecond
                 it[userIdentityId] = migratedEvent.userIdentityId
@@ -87,7 +84,6 @@ class EventStore<E : IEvent>(
 object Events : Table() {
     val id = integer("id").autoIncrement()
     val name = varchar("name", length = 50)
-    val modelType = varchar("model_type", length = 50)
     val params = varchar("params", length = 5000)
     val modelId = varchar("model_id", 36)
     val timestamp = long("timestamp")

@@ -42,7 +42,6 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
     internal fun executeEffect(
         modelBefore: Model<T>?,
         eventParams: EventParams,
-        modelType: String,
         newState: State<T, E, ModelStates>,
         event: IEvent,
         view: IModelView<T>,
@@ -53,10 +52,12 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
             if (event.modelId == null) {
                 throw RuntimeException("modelId is required to create model")
             }
+            val modelProperties = effectCreateModelFunction(eventParams)
             val created = Model(
                 id = event.modelId!!,       // TODO: !!
                 state = newState.name,
-                properties = effectCreateModelFunction(eventParams)
+                properties = modelProperties,
+                graphQlName = getGraphQlName(modelProperties),
             )
             if (!isDryRun) {
                 view.create(created)
@@ -84,6 +85,12 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
             view.update(modelWithUpdatedState)
         }
         return modelWithUpdatedState
+    }
+
+    private fun getGraphQlName(modelProperties: T): String {
+        val className = modelProperties::class.simpleName ?: throw RuntimeException()
+        val indexOfProperties = className.indexOf("Properties")
+        return className.substring(0, if (indexOfProperties == -1) className.length else indexOfProperties).toLowerCase()
     }
 
 

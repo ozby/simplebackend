@@ -9,10 +9,15 @@ const val initial = "initial"
 
 class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val thisType: KClass<T>) {
 
+    internal lateinit var modelView: IModelView<T>
     val onStateChangeListeners: MutableList<in suspend (Model<T>) -> Unit> = mutableListOf<suspend (Model<T>) -> Unit>()
     private lateinit var currentState: State<T, E, ModelStates>
-    internal val states = mutableListOf<State<T, E, ModelStates>>()
+    private val states = mutableListOf<State<T, E, ModelStates>>()
     private lateinit var initialState: State<T, E, ModelStates>
+
+    internal fun setView(view: IModelView<*>) {
+        modelView = view as IModelView<T>
+    }
 
     fun initialState(init: State<T, E, ModelStates>.() -> Unit) {
         val state = State<T, E, ModelStates>(initial)
@@ -47,7 +52,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         val newState = transition.enterTransition(isDryRun) { getStateByName(it.name) }
 
         currentState.exitState(performActions, model, event)
-        var updatedModel = transition.executeEffect(model, event.getParams(), event.modelType, newState, event, view, isDryRun)
+        var updatedModel = transition.executeEffect(model, event.getParams(), newState, event, view, isDryRun)
 
         newState.enterState(!isDryRun && performActions, model, event)
 
@@ -57,7 +62,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
             autoTransition.currentState = newState
             val newerState = autoTransition.enterTransition(isDryRun) { getStateByName(it.name) }
             newState.exitState(performActions, model, event)
-            updatedModel = autoTransition.executeEffect(model, event.getParams(), event.modelType, newerState, event, view, isDryRun)
+            updatedModel = autoTransition.executeEffect(model, event.getParams(), newerState, event, view, isDryRun)
             newerState.enterState(!isDryRun && performActions, model, event)
 
             // TODO:   Tror det är bäst att State och Transition endast ska hålla data och flytta all logik till denna klassen.Svårt att få översikt annars.

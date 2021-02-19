@@ -23,14 +23,14 @@ fun main() {
         eventParser = ::parseEvent,
         authorizer = Authorizer,
         managedModels = setOf(
-            ManagedModel(User::class, userStateMachine(), UserView),
-            ManagedModel(Game::class, gameStateMachine, GameView)
+            ManagedModel(UserProperties::class, userStateMachine(), UserView),
+            ManagedModel(GameProperties::class, gameStateMachine, GameView)
         ),
         port = 8080,
         serModule = SerializersModule {
             polymorphic(ModelProperties::class) {
-                subclass(Game::class)
-                subclass(User::class)
+                subclass(GameProperties::class)
+                subclass(UserProperties::class)
             }
         },
         customGraphqlPackages = listOf("graphql"),

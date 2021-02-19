@@ -1,8 +1,8 @@
+import com.prettybyte.simplebackend.lib.EventParams
+import com.prettybyte.simplebackend.lib.IEvent
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import com.prettybyte.simplebackend.lib.EventParams
-import com.prettybyte.simplebackend.lib.IEvent
 
 const val createGame = "CreateGame"
 const val makeMove = "MakeMove"
@@ -10,7 +10,6 @@ const val createUser = "CreateUser"
 
 sealed class Event(
     override val schemaVersion: Int,
-    override val modelType: String,
     override val modelId: String?,
     override val name: String,
     override val params: String,
@@ -20,7 +19,6 @@ sealed class Event(
 class CreateGame(gameId: String, params: String, userIdentityId: String) : Event(
     schemaVersion = 7,
     name = createGame,
-    modelType = "Game",
     modelId = gameId,
     params = params,
     userIdentityId = userIdentityId
@@ -32,7 +30,6 @@ class CreateGame(gameId: String, params: String, userIdentityId: String) : Event
 class MakeMove(gameId: String, params: String, userIdentityId: String) : Event(
     schemaVersion = 1,
     name = makeMove,
-    modelType = "Game",
     modelId = gameId,
     params = params,
     userIdentityId = userIdentityId
@@ -46,7 +43,6 @@ class MakeMove(gameId: String, params: String, userIdentityId: String) : Event(
 class CreateUser(userId: String, params: String, userIdentityId: String) : Event(
     schemaVersion = 1,
     name = createUser,
-    modelType = "User",
     modelId = userId,
     params = params,
     userIdentityId = userIdentityId
