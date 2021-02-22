@@ -21,8 +21,6 @@ into a state machine.
 
 If you are not familiar with UML state machines you may want to look at https://en.wikipedia.org/wiki/UML_state_machine.
 
-Reads will use materialized views.
-
 The code you write is more functional and declarative than imperative.
 
 ## How do I access the database?
@@ -33,7 +31,7 @@ application can be restarted without loosing data). Benefits:
 * All you need is Kotlin, you don't have to be an expert in SQL.
 * You don't have to write code to handle errors if the database is unresponsive.
 * Less boilerplate: you don't have to convert data to/from the database.
-* Better performance since you avoid the network request to the database. Also, with materialized views the data is readily available when requested.
+* Lower latency since you avoid the network request to the database.
 
 Note that blobs should not be stored in the memory (use e.g. a CDN instead).
 
