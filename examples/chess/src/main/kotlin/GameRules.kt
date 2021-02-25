@@ -1,7 +1,9 @@
+import Piece.*
 import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.*
 import kotlinx.coroutines.delay
 import statemachines.GameStates
+import statemachines.GameStates.*
 import views.UserView
 
 const val white = true
@@ -31,25 +33,113 @@ object GameRules {
         if (model == null) {
             return BlockedByGuard("Game missing")
         }
-
-        val game = model.properties
+        if (model.state == waitingForBlack.name) {
+            return null
+        }
         val from = params.from
         val to = params.to
         if (!isSquareOnBoard(from) || !isSquareOnBoard(to)) {
             return BlockedByGuard("Not a valid square")
         }
+        val validMoves = calculateAllValidMoves(model);
+        return if (validMoves.contains(Pair(from, to))) null else BlockedByGuard("Illegal move")
+    }
 
-        val pieceToMove = game.pieces[squareToIndex(from)]
-
-        if (isPlayerMovingOtherPlayersPiece(userIdentity, pieceToMove, game)) {
-            return BlockedByGuard("You can only move your own pieces")
+    private fun calculateAllValidMoves(model: Model<GameProperties>): Set<Pair<String, String>> {
+        val state = GameStates.valueOf(model.state)
+        if (state == blackVictory || state == whiteVictory) {
+            return emptySet()
         }
-
-        val legal = when (pieceToMove) {
-            "wp" -> isLegalPawnMove(white, from, to, game.pieces)
-            else -> true
+        val pieces = model.properties.pieces
+        val isWhite = state == waitingForWhite
+        val validMoves = mutableSetOf<Pair<String, String>>()
+        val board = Board(pieces)
+        for (x in 0..7) {
+            for (y in 0..7) {
+                val piece = board.getPieceAt(x, y) ?: continue
+                if ((piece.second == Color.white && state == waitingForWhite) || (piece.second == Color.black && state == waitingForBlack)) {
+                    validMoves.addAll(getValidMovesForPiece(board, x, y))
+                }
+            }
         }
-        return if (legal) null else BlockedByGuard("Illegal move")
+        return validMoves   // TODO: should remove any move that leaves player with a threatened king
+    }
+
+    private fun getValidMovesForPiece(board: Board, x: Int, y: Int): Set<Pair<String, String>> {
+        val piece = board.getPieceAt(x, y) ?: return emptySet()
+        return when (piece.first) {
+            pawn -> getValidMovesForPawn(board, x, y, piece.second)
+            king -> getValidMovesForKing(board, x, y, piece.second)
+            rook -> getValidMovesForRook(board, x, y, piece.second)
+            queen -> emptySet()
+            knight -> emptySet()
+            bishop -> emptySet()
+        }
+    }
+
+    private fun getValidMovesForPawn(board: Board, x: Int, y: Int, color: Color): Set<Pair<String, String>> {
+        val validMoves = mutableSetOf<Pair<String, String>>()
+        val from = Board.getSquareName(x, y)
+        if (y == 7) {
+            return emptySet()
+        }
+        if (board.getPieceAt(x, y + 1) == null) {
+            validMoves.add(Pair(from, Board.getSquareName(x, y + 1)))
+        }
+        val pieceForwardRight = board.getPieceAt(x + 1, y + 1)
+        if (x < 7 && pieceForwardRight != null && pieceForwardRight.second != color) {
+            validMoves.add(Pair(from, Board.getSquareName(x + 1, y + 1)))
+        }
+        val pieceForwardLeft = board.getPieceAt(x - 1, y + 1)
+        if (x > 1 && pieceForwardLeft != null && pieceForwardLeft.second != color) {
+            validMoves.add(Pair(from, Board.getSquareName(x - 1, y + 1)))
+        }
+        // TODO: en passant
+        return validMoves
+    }
+
+    private fun getValidMovesForKing(board: Board, x: Int, y: Int, color: Color): Set<Pair<String, String>> {
+        val validMoves = mutableSetOf<Pair<String, String>>()
+        val from = Board.getSquareName(x, y)
+        val toSquares = setOf(
+            Pair(x, y + 1), Pair(x + 1, y + 1), Pair(x + 1, y), Pair(x + 1, y - 1), Pair(x, y - 1), Pair(x - 1, y - 1),
+            Pair(x - 1, y), Pair(x - 1, y + 1)
+        )
+        val squaresOnBoard = toSquares.filter { it.first in 0..7 && it.second in 0..7 }
+        squaresOnBoard.forEach {
+            val pieceAtSquare = board.getPieceAt(it.first, it.second)
+            if (pieceAtSquare == null || pieceAtSquare.second != color) {
+                validMoves.add(Pair(from, Board.getSquareName(it.first, it.second)))
+            }
+        }
+        // TODO: castling
+        return validMoves
+    }
+
+    private fun getValidMovesForRook(board: Board, x: Int, y: Int, color: Color): Set<Pair<String, String>> {
+        val from = Board.getSquareName(x, y)
+        val squares = mutableSetOf<SquareCoordinates>()
+        squares.addAll(getSquaresForward(board, x, y, color))
+
+
+        return squares.map { Pair(from, Board.getSquareName(it)) }.toSet()
+    }
+
+    private fun getSquaresForward(board: Board, x: Int, y: Int, color: Color): Set<SquareCoordinates> {
+        val squares = mutableSetOf<SquareCoordinates>()
+        var squareWasAdded: Boolean
+        var yToCheck = y + 1
+        do {
+            val piece = board.getPieceAt(x, yToCheck)
+            if (yToCheck < 8 && (piece == null || piece.second != color)) {
+                squares.add(Pair(x, yToCheck))
+                squareWasAdded = true
+                yToCheck++
+            } else {
+                squareWasAdded = false
+            }
+        } while (squareWasAdded)
+        return squares
     }
 
     private fun isLegalPawnMove(isWhite: Boolean, from: String, to: String, pieces: List<String>): Boolean {
@@ -208,3 +298,49 @@ object GameRules {
         }
     }
 }
+
+private class Board(val pieces: List<String>) {
+
+    fun getPieceAt(x: Int, y: Int): Pair<Piece, Color>? {
+        if (!(x in 0..7) || !(y in 0..7)) {
+            return null
+        }
+        val piece = pieces[y * 8 + x]
+        if (piece.isEmpty()) {
+            return null
+        }
+        val pieceType = piece.substring(1, 2)
+        val pieceColor = piece.substring(0, 1)
+        return Pair(getPieceFromAbbreviation(pieceType), if (pieceColor == "w") Color.white else Color.black)
+    }
+
+    private fun getPieceFromAbbreviation(pieceType: String): Piece {
+        return when (pieceType) {
+            "p" -> pawn
+            "r" -> rook
+            "b" -> bishop
+            "q" -> queen
+            "k" -> king
+            "n" -> knight
+            else -> throw RuntimeException()
+        }
+    }
+
+    companion object {
+        fun getSquareName(x: Int, y: Int): String {
+            return "abcdefgh"[x] + (y + 1).toString()
+        }
+
+        fun getSquareName(sq: SquareCoordinates): String = getSquareName(sq.first, sq.second)
+    }
+}
+
+enum class Piece(p: String) {
+    pawn("p"), rook("r"), knight("k"), bishop("b"), queen("q"), king("k")
+}
+
+enum class Color(c: String) {
+    white("w"), black("b")
+}
+
+typealias SquareCoordinates = Pair<Int, Int>

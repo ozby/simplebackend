@@ -1,15 +1,10 @@
 import Authorizer.Roles.editor
-import Authorizer.Roles.viewer
-import io.jsonwebtoken.Claims
-import io.jsonwebtoken.Jws
 import com.prettybyte.simplebackend.SimpleBackend
-
 import com.prettybyte.simplebackend.lib.IAuthorizer
-import com.prettybyte.simplebackend.lib.IQueryView
 import com.prettybyte.simplebackend.lib.Problem
 import com.prettybyte.simplebackend.lib.UserIdentity
-
-import views.GameView
+import io.jsonwebtoken.Claims
+import io.jsonwebtoken.Jws
 import views.UserView
 import java.util.*
 

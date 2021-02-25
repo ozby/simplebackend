@@ -1,6 +1,5 @@
 package com.prettybyte.simplebackend.lib
 
-import arrow.core.Either
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
@@ -66,11 +65,6 @@ interface IAuthorizer<E : IEvent> {
 
     fun isAllowedToCreateEvent(userIdentity: UserIdentity, event: E): Boolean
     fun isAllowedToSubscribeToEvents(userIdentity: UserIdentity): Boolean
-}
-
-interface IQueryView {
-    fun getQueryParamsClass(): KClass<*>    // TODO: can we use reflection instead?
-    fun query(params: Any): Either<Problem, JsonString> // JsonString is good, don't try to change it.   TODO: is it possible for implementing classes to use a subclass? e.g. params: QueryParams
 }
 
 typealias JsonString = String

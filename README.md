@@ -11,10 +11,11 @@ Status: As this is an experiment, you should absolutely not use this in producti
 Suitable for systems:
 
 * More reads than writes
+* Auditing is required
 * Not expected to have millions of users
 * Uptime is not critical
 
-## Important patterns
+### Important patterns
 
 With SimpleBackend you will be using the event sourcing and CQRS patterns. The promoted way to create or modify data is through an Event which will be inserted
 into a state machine.
@@ -23,7 +24,7 @@ If you are not familiar with UML state machines you may want to look at https://
 
 The code you write is more functional and declarative than imperative.
 
-## How do I access the database?
+### How do I access the database?
 
 In order to simplify things, you don't need to deal with a database. Instead, the data is kept in memory (don't worry, the Events are persisted so the
 application can be restarted without loosing data). Benefits:
@@ -38,14 +39,14 @@ Note that blobs should not be stored in the memory (use e.g. a CDN instead).
 Since all data is kept in the application's memory, it must be running on a machine with plenty of RAM (these days you can find cloud instances with up to 24
 TiB RAM).
 
-## Scalability
+### Scalability
 
 Since the design goal is simplicity, there should only be one instance of SimpleBackend. This means that SimpleBackend can only be scaled vertically. Computers
 are pretty fast these days and SimpleBackend should be quite performant, so it is likely that one instance will be enough for most systems.
 
 In the future, we may allow more complex configurations that would enable horizontal scalability.
 
-## High availability?
+### High availability?
 
 Having only one instance of SimpleBackend means that there is no redundancy. Therefore, it is not a good idea to use SimpleBackend if people's lives are
 depending on your application.
@@ -55,18 +56,18 @@ datacenter (99.995% uptime).
 
 In the future, we may allow more complex configurations that would enable redundancy.
 
-## Authentication
+### Authentication
 
 Currently, only Google Sign-In is supported. The client should acquire a JWT from Google and that JWT should be set in the 'Authorization' header
 (as "Bearer ..."). In your application, you can access a UserIdentity object which will contain "subject" from the JWT. Most applications will want to have more
 information about the user than that, so they will have a User model that corresponds to the subject.
 
-## Authorization
+### Authorization
 
 You must provide an implementation of the Authorizer interface. One straight forward way is Role Based Access Control where you check if a specific role is
 stored on a User model. Just remember to verify updates on the User model so that the user cannot set the roles himself.
 
-## GraphQL
+### GraphQL
 
 To modify the data on the server, you will use a GraphQL mutation ("createEvent") which is built in.
 
@@ -77,3 +78,10 @@ At the moment, gRPC is used to manage subscribe to events (this will be handled 
 ## What if I need more than SimpleBackend can provide?
 
 It is possible to provide custom queries and modifications when configuring SimpleBackend, giving you full control.
+
+## Get started
+
+### Immutable
+
+Don't try to modify the parameters.
+

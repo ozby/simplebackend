@@ -3,12 +3,10 @@ package com.prettybyte.simplebackend.lib.ktorgraphql.schema
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import com.expediagroup.graphql.types.operations.Mutation
-import com.prettybyte.simplebackend.lib.EventOptions
-import com.prettybyte.simplebackend.lib.EventService
-import com.prettybyte.simplebackend.lib.IAuthorizer
-import com.prettybyte.simplebackend.lib.IEvent
+import com.prettybyte.simplebackend.lib.*
 import com.prettybyte.simplebackend.lib.ktorgraphql.AuthorizedContext
 import com.prettybyte.simplebackend.logAndMakeInternalException
+import graphql.execution.DataFetcherResult
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
@@ -27,25 +25,27 @@ class EventMutationService<E : IEvent>(
         eventParametersJson: String,
         dryRun: Boolean,
         context: AuthorizedContext
-    ): CreateEventResponse {
+    ): DataFetcherResult<CreateEventResponse?> {
         try {
             if (modelId.length < 36) {  // TODO: we should make it so that the id is generated on the backend
-                throw RuntimeException("modelId is too short")
+                DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "modelId is too short")).build()
             }
             val userIdentity = context.userIdentity
             val event = eventParser(eventName, modelId, eventParametersJson, userIdentity.id)
             validateParams(event)
             val eventOptions = EventOptions(dryRun = dryRun)
             if (!authorizer.isAllowedToCreateEvent(userIdentity, event)) {
-                throw RuntimeException("Permission denied")
+                DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "Permission denied")).build()
             }
-            when (val result = eventService.process(event, eventOptions, eventParametersJson, userIdentity = userIdentity)) {
-                is Left -> throw result.a.asException()
-                is Right -> return CreateEventResponse(
-                    blockedByGuards = emptyList(),
-                    dryRun = dryRun,
-                    model = json.encodeToString(result.b)
-                )
+            return when (val result = eventService.process(event, eventOptions, eventParametersJson, userIdentity = userIdentity)) {
+                is Left -> DataFetcherResult.newResult<CreateEventResponse>().error(result.a).build()
+                is Right -> DataFetcherResult.newResult<CreateEventResponse>().data(
+                    CreateEventResponse(
+                        blockedByGuards = emptyList(),
+                        dryRun = dryRun,
+                        model = json.encodeToString(result.b)
+                    )
+                ).build()
             }
         } catch (e: Exception) {
             throw logAndMakeInternalException(e)
