@@ -2,7 +2,6 @@ package com.prettybyte.simplebackend.lib.ktorgraphql
 
 import com.expediagroup.graphql.server.execution.GraphQLContextFactory
 import com.prettybyte.simplebackend.lib.UserIdentity
-import graphql.GraphqlErrorException
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
 import io.jsonwebtoken.Jwts
@@ -44,10 +43,14 @@ class KtorGraphQLContextFactory : GraphQLContextFactory<AuthorizedContext, Appli
                 .parseClaimsJws(jwtString)
             validateGoogleJWT(externalJws)
             val errorMessage: String? = null // authorizer.onExchangeJWT(externalJws) TODO
-            if (errorMessage != null) throw RuntimeException(errorMessage)
+            if (errorMessage != null) {
+                println(errorMessage)
+                throw RuntimeException()
+            }
             return AuthorizedContext(UserIdentity.fromJws(externalJws))
         } catch (e: Exception) {
-            throw GraphqlErrorException.Builder().message("Could not validate JWT").build()
+            e.printStackTrace()
+            throw RuntimeException()
         }
     }
 
@@ -92,3 +95,4 @@ data class GoogleKey(val e: String, val n: String, val alg: String, val use: Str
         return KeyFactory.getInstance("RSA").generatePublic(RSAPublicKeySpec(modulus, exponent))
     }
 }
+

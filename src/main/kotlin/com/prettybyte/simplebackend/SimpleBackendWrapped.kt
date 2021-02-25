@@ -26,7 +26,7 @@ const val USER_IDENTITY = "userIdentity"
 
 internal class SimpleBackendWrapped<E : IEvent>(
     eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,      // TODO: reflection?
-    authorizer: IAuthorizer<E>,
+    eventAuthorizer: IEventAuthorizer<E>,
     private val managedModels: Set<ManagedModel<*, E, *>>,
     private val port: Int,
     serModule: SerializersModule,   // TODO: ugly. Can reflection help?
@@ -71,7 +71,7 @@ internal class SimpleBackendWrapped<E : IEvent>(
                 mapper,
                 customGraphqlPackages,
                 customQueries,
-                listOf(TopLevelObject(EventMutationService(eventService, eventParser, json, authorizer)))
+                listOf(TopLevelObject(EventMutationService(eventService, eventParser, json, eventAuthorizer)))
             )
         val handler = GraphQLHelper(server, mapper)
 
@@ -154,7 +154,7 @@ object SimpleBackend {
 
     fun <E : IEvent> setup(
         eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,      // TODO: reflection?
-        authorizer: IAuthorizer<E>,
+        eventAuthorizer: IEventAuthorizer<E>,
         managedModels: Set<ManagedModel<*, E, *>>,
         port: Int,
         serModule: SerializersModule,   // TODO: ugly. Can reflection help?
@@ -163,7 +163,17 @@ object SimpleBackend {
         customGraphqlPackages: List<String>,
         customQueries: List<TopLevelObject>
     ) {
-        sb = SimpleBackendWrapped(eventParser, authorizer, managedModels, port, serModule, databaseConnection, migrations, customGraphqlPackages, customQueries)
+        sb = SimpleBackendWrapped(
+            eventParser,
+            eventAuthorizer,
+            managedModels,
+            port,
+            serModule,
+            databaseConnection,
+            migrations,
+            customGraphqlPackages,
+            customQueries
+        )
     }
 
     fun <E : IEvent> processEvent(event: E, eventParametersJson: String, userIdentity: UserIdentity) {

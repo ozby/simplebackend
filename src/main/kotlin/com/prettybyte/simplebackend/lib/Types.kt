@@ -1,5 +1,6 @@
 package com.prettybyte.simplebackend.lib
 
+import arrow.core.Either
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
@@ -24,9 +25,13 @@ data class Model<T : ModelProperties>(
 abstract class ModelProperties
 
 interface IModelView<T : ModelProperties> {
-    fun get(id: String): Model<T>?
+    fun get(id: String, readAuthenticator: IReadAuthenticator<T>): Either<Problem, Model<T>?>
     fun create(model: Model<T>)
     fun update(new: Model<T>)
+}
+
+interface IReadAuthenticator<T : ModelProperties> {
+    fun authorize(model: Model<T>?): Either<Problem, Model<T>?>
 }
 
 interface IEvent {
@@ -54,7 +59,7 @@ class RawEvent(
 
 class RawEventParams : EventParams()
 
-interface IAuthorizer<E : IEvent> {
+interface IEventAuthorizer<E : IEvent> {
     /**
      * This will be called when a client wants to acquire an simplebackend.SimpleBackend JWT. For Single-Sign On, this is a good place to
      * create a new user (unless the user has already been created).
@@ -84,3 +89,9 @@ interface IWithResponseMapper<T : ModelProperties> {
 }
 
 data class BlockedByGuard(val message: String)
+
+class AuthorizeAll<T : ModelProperties> : IReadAuthenticator<T> {
+    override fun authorize(model: Model<T>?): Either<Problem, Model<T>?> {
+        return Either.Right(model)
+    }
+}

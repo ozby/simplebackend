@@ -11,7 +11,7 @@ data class GameProperties(
 @Serializable
 data class UserProperties(
     val userIdentityId: String,
-    val roles: Set<Authorizer.Roles>,
+    val roles: Set<EventAuthorizer.Roles>,
     val firstName: String,
     val lastName: String,
 ) : ModelProperties()

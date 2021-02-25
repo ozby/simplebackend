@@ -7,7 +7,8 @@ import graphql.language.SourceLocation
 enum class Status {
     INVALID_ARGUMENT,
     FAILED_PRECONDITION,
-    NOT_FOUND
+    NOT_FOUND,
+    UNAUTHORIZED,
 }
 
 class Problem(private val status: Status, private val errorMessage: String = "") : GraphQLError {
@@ -31,8 +32,9 @@ class Problem(private val status: Status, private val errorMessage: String = "")
         fun generalProblem(): Problem =
             Problem(Status.INVALID_ARGUMENT, "General problem")
 
-        fun modelNotFound(): Problem = Problem(Status.NOT_FOUND, "Model not found")
+        fun notFound(): Problem = Problem(Status.NOT_FOUND, "Not found")
 
+        fun unauthorized(message: String = ""): Problem = Problem(Status.UNAUTHORIZED, "Unauthorized ($message)")
     }
 
     override fun toString(): String {

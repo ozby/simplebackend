@@ -64,8 +64,12 @@ information about the user than that, so they will have a User model that corres
 
 ### Authorization
 
-You must provide an implementation of the Authorizer interface. One straight forward way is Role Based Access Control where you check if a specific role is
-stored on a User model. Just remember to verify updates on the User model so that the user cannot set the roles himself.
+You must provide an implementation of the Authorizer interface so that SimpleServer knows if the user is authorized to create an event.
+
+When it comes to reading data, it is recommended that you implement authorization in the Views.
+
+One straight forward way is Role Based Access Control where you check if a specific role is stored on a User model. Just remember to verify updates on the User
+model so that the user cannot set the roles himself.
 
 ### GraphQL
 

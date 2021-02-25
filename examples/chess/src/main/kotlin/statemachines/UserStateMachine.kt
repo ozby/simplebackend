@@ -1,9 +1,9 @@
 package statemachines
 
-import Authorizer.Roles.editor
-import Authorizer.Roles.viewer
 import CreateUserParams
 import Event
+import EventAuthorizer.Roles.editor
+import EventAuthorizer.Roles.viewer
 import UserProperties
 import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.EventParams
@@ -43,7 +43,7 @@ fun userStateMachine(): StateMachine<UserProperties, Event, UserStates> =
     }
 
 fun userNotAlreadyCreated(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
-    if (UserView.get(userIdentity) != null) {
+    if (UserView.getWithoutAuthorization(userIdentity) != null) {
         return BlockedByGuard("User already exist")
     }
     return null

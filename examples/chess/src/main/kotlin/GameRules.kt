@@ -18,8 +18,8 @@ object GameRules {
             return BlockedByGuard("isCorrectPlayer: game was null")
         }
         return when (game.state) {
-            GameStates.waitingForBlack.name -> if (game.properties.blackPlayerId != user.id) BlockedByGuard("Not your turn") else null
-            GameStates.waitingForWhite.name -> if (game.properties.whitePlayerId != user.id) BlockedByGuard("Not your turn") else null
+            waitingForBlack.name -> if (game.properties.blackPlayerId != user.id) BlockedByGuard("Not your turn") else null
+            waitingForWhite.name -> if (game.properties.whitePlayerId != user.id) BlockedByGuard("Not your turn") else null
             else -> null
         }
     }
@@ -152,7 +152,7 @@ object GameRules {
         if (userIdentity.id == computerPlayer) {
             return false
         }
-        val user = UserView.get(userIdentity) ?: return true
+        val user = UserView.getWithoutAuthorization(userIdentity) ?: return true
         return pieceToMove.startsWith("w") && game.whitePlayerId != user.id ||
                 pieceToMove.startsWith("b") && game.blackPlayerId != user.id
     }

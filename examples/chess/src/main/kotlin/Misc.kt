@@ -1,3 +1,6 @@
+import arrow.core.Either.Left
+import arrow.core.Either.Right
+import com.prettybyte.simplebackend.lib.AuthorizeAll
 import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
@@ -17,16 +20,18 @@ fun parseEvent(eventName: String, modelId: String, params: String, userIdentityI
  * Returns user if state == active. Else null.
  */
 fun getActiveUser(userIdentity: UserIdentity): Model<UserProperties>? {
-    val user = UserView.get(userIdentity)
-    if (user?.state?.equals(UserStates.active.name) ?: false) {
-        return user
-    } else {
-        return null
+    return when (val user = UserView.get(userIdentity.id, AuthorizeAll())) {
+        is Left -> null
+        is Right -> if (user.b?.state?.equals(UserStates.active.name) == true) {
+            return user.b
+        } else {
+            return null
+        }
     }
 }
 
 fun canOnlyCreateGameWhereIAmAPlayer(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
-    val user = UserView.get(userIdentity) ?: return BlockedByGuard("User not found")
+    val user = UserView.getWithoutAuthorization(userIdentity) ?: return BlockedByGuard("User not found")
     if ((event.getParams() as CreateGameParams).whitePlayerUserId != user.id) {
         return BlockedByGuard("You can only create new games where you are the white player")
     }

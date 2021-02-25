@@ -1,6 +1,8 @@
-import Authorizer.Roles.editor
+import EventAuthorizer.Roles.editor
+import arrow.core.Either
 import com.prettybyte.simplebackend.SimpleBackend
-import com.prettybyte.simplebackend.lib.IAuthorizer
+import com.prettybyte.simplebackend.lib.AuthorizeAll
+import com.prettybyte.simplebackend.lib.IEventAuthorizer
 import com.prettybyte.simplebackend.lib.Problem
 import com.prettybyte.simplebackend.lib.UserIdentity
 import io.jsonwebtoken.Claims
@@ -8,7 +10,7 @@ import io.jsonwebtoken.Jws
 import views.UserView
 import java.util.*
 
-object Authorizer : IAuthorizer<Event> {
+object EventAuthorizer : IEventAuthorizer<Event> {
 
     // Available roles:
     enum class Roles {
@@ -18,7 +20,10 @@ object Authorizer : IAuthorizer<Event> {
 
     override fun onExchangeJWT(jws: Jws<Claims>): Problem? {
         val subject = jws.body.subject
-        if (UserView.getByUserIdentityId(subject) != null) return null
+        when (val either = UserView.getByUserIdentityId(subject, AuthorizeAll())) {
+            is Either.Left -> return either.a
+        }
+
         // The user doesn't exist. Should we create a user?
         val email = jws.body["email"].toString()
         if (email.endsWith("@prettybyte.com") && jws.body["email_verified"] == true) {
@@ -45,7 +50,7 @@ object Authorizer : IAuthorizer<Event> {
     }
 
     private fun hasRole(role: Roles, userIdentity: UserIdentity): Boolean {
-        return UserView.get(userIdentity)?.properties?.roles?.contains(role) ?: false
+        return UserView.getWithoutAuthorization(userIdentity)?.properties?.roles?.contains(role) ?: false
     }
 
 }

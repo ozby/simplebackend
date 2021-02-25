@@ -16,7 +16,7 @@ class EventMutationService<E : IEvent>(
     private val eventService: EventService<E>,
     private val eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,
     private val json: Json,
-    private val authorizer: IAuthorizer<E>,
+    private val eventAuthorizer: IEventAuthorizer<E>,
 ) : Mutation {
 
     suspend fun createEvent(
@@ -34,7 +34,7 @@ class EventMutationService<E : IEvent>(
             val event = eventParser(eventName, modelId, eventParametersJson, userIdentity.id)
             validateParams(event)
             val eventOptions = EventOptions(dryRun = dryRun)
-            if (!authorizer.isAllowedToCreateEvent(userIdentity, event)) {
+            if (!eventAuthorizer.isAllowedToCreateEvent(userIdentity, event)) {
                 DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "Permission denied")).build()
             }
             return when (val result = eventService.process(event, eventOptions, eventParametersJson, userIdentity = userIdentity)) {

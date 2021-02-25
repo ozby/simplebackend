@@ -21,7 +21,7 @@ fun main() {
         databaseConnection = DatabaseConnection(url = "jdbc:sqlite:/home/linus/temp/autoserverChess.db", driver = "org.sqlite.JDBC"),
         migrations = Migrations,
         eventParser = ::parseEvent,
-        authorizer = Authorizer,
+        eventAuthorizer = EventAuthorizer,
         managedModels = setOf(
             ManagedModel(UserProperties::class, userStateMachine(), UserView),
             ManagedModel(GameProperties::class, gameStateMachine, GameView)
