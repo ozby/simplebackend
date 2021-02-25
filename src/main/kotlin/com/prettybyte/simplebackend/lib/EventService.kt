@@ -120,35 +120,6 @@ class EventService<E : IEvent>(
         }
     }
 
-/*     suspend fun createEvent(request: EventRequest): Response {
-        try {
-            val userIdentity = ctx.call {
-                return@call userIdentityKey.get()
-            }
-
-            if (request.modelId.length < 36) {  // TODO: we should make it so that the id is generated on the backend
-                throw Status.INVALID_ARGUMENT.withDescription("modelId is too short").asRuntimeException()
-            }
-
-            val event = eventParser(request.eventName, request.modelId, request.eventParametersJson, userIdentity.id)
-            validateParams(event)
-            val eventOptions = EventOptions(dryRun = request.eventOptions.dryRun)
-            if (!authorizer.isAllowedToCreateEvent(userIdentity, event)) {
-                throw Status.PERMISSION_DENIED.asRuntimeException()
-            }
-
-            when (val result = process(event, eventOptions, request.eventParametersJson, userIdentity = userIdentity)) {
-                is Left -> throw result.a.toGrpcException()
-                is Right -> return Response.newBuilder().setResponseJson(json.encodeToString(result.b)).build()
-            }
-        } catch (e: Exception) {
-            throw logAndMakeInternalException(e)
-        }
-    }
-
- */
-
-
     override fun subscribe(request: Simplebackend.SubscriptionRequest): Flow<Simplebackend.EventUpdatedResponse> {
         println("Client subscribed")
         return stateFlow

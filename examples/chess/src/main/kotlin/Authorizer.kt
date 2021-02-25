@@ -10,8 +10,6 @@ import java.util.*
 
 object Authorizer : IAuthorizer<Event> {
 
-    lateinit var simpleBackend: SimpleBackend<Event>
-
     // Available roles:
     enum class Roles {
         editor,
@@ -25,7 +23,7 @@ object Authorizer : IAuthorizer<Event> {
         val email = jws.body["email"].toString()
         if (email.endsWith("@prettybyte.com") && jws.body["email_verified"] == true) {
             val p = "{\"userIdentityId\": \"$subject\", \"firstName\": \"${email}\", \"lastName\": \"\"}"
-            simpleBackend.processEvent(
+            SimpleBackend.processEvent(
                 CreateUser(userId = UUID.randomUUID().toString(), params = p, userIdentityId = subject),
                 eventParametersJson = p,
                 systemUserIdentity

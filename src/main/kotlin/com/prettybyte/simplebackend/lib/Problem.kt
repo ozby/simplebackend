@@ -27,6 +27,12 @@ class Problem(private val status: Status, private val errorMessage: String = "")
 
         fun preventedByGuard(failedGuards: List<BlockedByGuard>): Problem =
             Problem(Status.FAILED_PRECONDITION, failedGuards.joinToString(", ") { it.message })
+
+        fun generalProblem(): Problem =
+            Problem(Status.INVALID_ARGUMENT, "General problem")
+
+        fun modelNotFound(): Problem = Problem(Status.NOT_FOUND, "Model not found")
+
     }
 
     override fun toString(): String {

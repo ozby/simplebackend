@@ -8,7 +8,6 @@ import com.prettybyte.simplebackend.lib.Model
 
 object GameView : IModelView<GameProperties> {
 
-    lateinit var simpleBackend: SimpleBackend<Event>
     private val games = HashMap<String, Model<GameProperties>>()
 
     override fun get(id: String): Model<GameProperties>? {
@@ -27,7 +26,7 @@ object GameView : IModelView<GameProperties> {
         return games.values.toList()
     }
 
-    fun history(id: String) = simpleBackend.getEventsForModelId(id)
+    fun history(id: String) = SimpleBackend.getEventsForModelId<Event>(id)
         .map { "${UserView.getByUserIdentityId(it.userIdentityId)?.properties?.firstName ?: it.userIdentityId} $it" }
 
 }

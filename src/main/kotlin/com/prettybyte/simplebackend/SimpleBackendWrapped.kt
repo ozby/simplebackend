@@ -1,5 +1,6 @@
 package com.prettybyte.simplebackend
 
+import arrow.core.Either
 import com.expediagroup.graphql.generator.TopLevelObject
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.prettybyte.simplebackend.lib.*
@@ -19,10 +20,11 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
+import kotlin.reflect.KClass
 
 const val USER_IDENTITY = "userIdentity"
 
-class SimpleBackend<E : IEvent>(
+internal class SimpleBackendWrapped<E : IEvent>(
     eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,      // TODO: reflection?
     authorizer: IAuthorizer<E>,
     private val managedModels: Set<ManagedModel<*, E, *>>,
@@ -126,6 +128,11 @@ class SimpleBackend<E : IEvent>(
     fun getEventsForModelId(id: String): List<E> {
         return eventStore.readAllEvents().filter { it.modelId == id }   // TODO 1.0: should be a separate SQL query
     }
+
+    fun getTransitions(kClass: KClass<out ModelProperties>, id: String): Either<Problem, List<String>> {
+        val stateMachine = managedModels.find { it.kClass == kClass }?.stateMachine ?: return Either.left(Problem.generalProblem())
+        return stateMachine.getEventTransitions(id)
+    }
 }
 
 fun logAndMakeInternalException(e: Exception): Throwable {
@@ -140,3 +147,33 @@ private fun buildPlaygroundHtml(graphQLEndpoint: String, subscriptionsEndpoint: 
         ?.replace("\${graphQLEndpoint}", graphQLEndpoint)
         ?.replace("\${subscriptionsEndpoint}", subscriptionsEndpoint)
         ?: throw IllegalStateException("graphql-playground.html cannot be found in the classpath")
+
+object SimpleBackend {
+
+    private lateinit var sb: SimpleBackendWrapped<out IEvent>
+
+    fun <E : IEvent> setup(
+        eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,      // TODO: reflection?
+        authorizer: IAuthorizer<E>,
+        managedModels: Set<ManagedModel<*, E, *>>,
+        port: Int,
+        serModule: SerializersModule,   // TODO: ugly. Can reflection help?
+        databaseConnection: DatabaseConnection,
+        migrations: IMigrations<E>?,
+        customGraphqlPackages: List<String>,
+        customQueries: List<TopLevelObject>
+    ) {
+        sb = SimpleBackendWrapped(eventParser, authorizer, managedModels, port, serModule, databaseConnection, migrations, customGraphqlPackages, customQueries)
+    }
+
+    fun <E : IEvent> processEvent(event: E, eventParametersJson: String, userIdentity: UserIdentity) {
+        return (sb as SimpleBackendWrapped<E>).processEvent(event, eventParametersJson, userIdentity)
+    }
+
+    fun <E : IEvent> getEventsForModelId(id: String): List<E> = (sb as SimpleBackendWrapped<E>).getEventsForModelId(id)
+
+    fun start() = sb.start()
+
+    fun getTransitions(kClass: KClass<out ModelProperties>, id: String): Either<Problem, List<String>> = sb.getTransitions(kClass, id)
+
+}

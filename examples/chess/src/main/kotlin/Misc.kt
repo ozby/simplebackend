@@ -1,3 +1,4 @@
+import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
 import statemachines.UserStates
@@ -24,6 +25,13 @@ fun getActiveUser(userIdentity: UserIdentity): Model<UserProperties>? {
     }
 }
 
+fun canOnlyCreateGameWhereIAmAPlayer(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+    val user = UserView.get(userIdentity) ?: return BlockedByGuard("User not found")
+    if ((event.getParams() as CreateGameParams).whitePlayerUserId != user.id) {
+        return BlockedByGuard("You can only create new games where you are the white player")
+    }
+    return null
+}
 
 const val computerPlayer = "Computer player"
 

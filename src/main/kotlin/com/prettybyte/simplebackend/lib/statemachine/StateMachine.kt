@@ -111,6 +111,11 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         onStateChangeListeners.add(f)
     }
 
+    fun getEventTransitions(id: String): Either<Problem, List<String>> {
+        val state = getStateByName(modelView.get(id)?.state ?: return Either.left(Problem.modelNotFound()))
+        return Either.right(state.transitions.mapNotNull { it.trigger })
+    }
+
 }
 
 inline fun <reified T : ModelProperties, E : IEvent, ModelStates : Enum<*>> stateMachine(init: StateMachine<T, E, ModelStates>.() -> Unit): StateMachine<T, E, ModelStates> {

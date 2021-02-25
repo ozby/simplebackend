@@ -1,7 +1,9 @@
 package graphql
 
 import GameProperties
+import arrow.core.Either
 import com.expediagroup.graphql.types.operations.Query
+import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.Model
 import views.GameView
 
@@ -22,4 +24,10 @@ class Game(private val model: Model<GameProperties>) {
     fun whitePlayerId(): String = model.properties.whitePlayerId
     fun blackPlayerId(): String = model.properties.blackPlayerId
     fun history(): List<String> = GameView.history(model.id)
+    fun transitions(): List<String> {
+        return when (val transitions = SimpleBackend.getTransitions(GameProperties::class, model.id)) {
+            is Either.Left -> emptyList()
+            is Either.Right -> transitions.b
+        }
+    }
 }

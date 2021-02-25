@@ -15,9 +15,9 @@ import views.UserView
 fun main() {
 
     val gameStateMachine = createGameStateMachine()
-    gameStateMachine.onStateChange { GameRules.makeComputerMove(it) }
+    gameStateMachine.onStateChange { makeComputerMove(it) }
 
-    val simpleBackend = SimpleBackend(
+    SimpleBackend.setup(
         databaseConnection = DatabaseConnection(url = "jdbc:sqlite:/home/linus/temp/autoserverChess.db", driver = "org.sqlite.JDBC"),
         migrations = Migrations,
         eventParser = ::parseEvent,
@@ -36,8 +36,5 @@ fun main() {
         customGraphqlPackages = listOf("graphql"),
         customQueries = listOf(TopLevelObject(GameQueryService()))
     )
-    GameRules.simpleBackend = simpleBackend
-    GameView.simpleBackend = simpleBackend
-    Authorizer.simpleBackend = simpleBackend
-    simpleBackend.start()
+    SimpleBackend.start()
 }
