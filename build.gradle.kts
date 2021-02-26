@@ -5,14 +5,17 @@ import com.google.protobuf.gradle.plugins
 import com.google.protobuf.gradle.protobuf
 import com.google.protobuf.gradle.protoc
 import org.gradle.kotlin.dsl.proto
-
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.4.21"
-    kotlin("plugin.serialization") version "1.4.21"
+    kotlin("jvm") version "1.4.30"
+    kotlin("plugin.serialization") version "1.4.30"
     `java-library`
     id("com.google.protobuf") version "0.8.14"
 }
+
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions.useIR = true
 
 version = "0.1.0"
 group = "com.prettybyte"

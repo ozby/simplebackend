@@ -5,6 +5,9 @@ plugins {
     kotlin("plugin.serialization") version "1.4.30"
 }
 
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions.useIR = true
+
 val coroutinesVersion = "1.4.2"
 val arrowVersion = "0.11.0"
 val exposedVersion = "0.28.1"

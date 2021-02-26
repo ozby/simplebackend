@@ -17,18 +17,19 @@ class GameRulesTest {
     val user1 = Model(
         id = user1Id,
         state = UserStates.active.name,
-        properties = UserProperties(firstName = "Adam", lastName = "Adamsson", roles = emptySet(), userIdentityId = userIdentityId1)
+        properties = UserProperties(firstName = "Adam", lastName = "Adamsson", roles = emptySet(), userIdentityId = userIdentityId1),
+        graphQlName = "user"
     )
     val gameId = "gameId"
 
     val freshGameProperties = GameRules.newGame(CreateGameParams(whitePlayerUserId = user1Id, blackPlayerUserId = user2Id))
-    val freshGameModel = Model(id = gameId, state = GameStates.waitingForWhite.name, freshGameProperties)
+    val freshGameModel = Model(id = gameId, state = GameStates.waitingForWhite.name, properties = freshGameProperties, graphQlName = "game")
     val moveA2A3Event = MakeMove(gameId = gameId, params = """{"from": "a2", "to": "a3"}""", userIdentityId1)
     val moveToIllegalSquareEvent = MakeMove(gameId = gameId, params = """{"from": "a2", "to": "j9"}""", userIdentityId1)
 
     @BeforeTest
     fun setupTest() {
-        if (UserView.get(user1Id) == null) {
+        if (UserView.getWithoutAuthorization(user1Id) == null) {
             UserView.create(user1)
         } else {
             UserView.update(user1)
