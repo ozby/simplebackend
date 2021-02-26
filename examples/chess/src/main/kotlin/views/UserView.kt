@@ -9,9 +9,8 @@ object UserView : IModelView<UserProperties> {
 
     private val users = HashMap<String, Model<UserProperties>>()
 
-
-    override fun get(id: String, auth: Auth<Model<UserProperties>>): Auth<Model<UserProperties>> {
-        return auth.withValue(users[id])
+    override fun getWithoutAuthorization(id: String): Model<UserProperties>? {
+        return users[id]
     }
 
     override fun create(model: Model<UserProperties>) {
@@ -20,6 +19,10 @@ object UserView : IModelView<UserProperties> {
 
     override fun update(new: Model<UserProperties>) {
         users[new.id] = new
+    }
+
+    override fun delete(id: String) {
+        users.remove(id)
     }
 
     fun getWithoutAuthorization(userIdentity: UserIdentity): Model<UserProperties>? {
@@ -36,4 +39,5 @@ object UserView : IModelView<UserProperties> {
             is Right -> u.b
         }
     }
+
 }

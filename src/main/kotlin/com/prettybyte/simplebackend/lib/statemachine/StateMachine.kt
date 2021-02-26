@@ -45,12 +45,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         // assert(event.model != null || event.name == initialState)
 
         val modelId = event.modelId
-        val model: Model<T>? = if (modelId == null) null else {
-            when (val either = view.get(modelId, AllowAll()).get()) {
-                is Either.Left -> return Either.Left(either.a)
-                is Either.Right -> either.b
-            }
-        }
+        val model: Model<T>? = if (modelId == null) null else view.getWithoutAuthorization(modelId)
 
         currentState = if (model == null) initialState else getStateByName(model.state)
         val transition = currentState.getTransitionForEvent(event) ?: throw RuntimeException("eventOccurred")
@@ -87,12 +82,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
     internal fun transitionExists(event: IEvent, view: IModelView<out ModelProperties>): Boolean {
         view as IModelView<T>
         val modelId = event.modelId
-        val model: Model<T>? = if (modelId == null) null else {
-            when (val either = view.get(modelId, AllowAll()).get()) {
-                is Either.Left -> throw RuntimeException()
-                is Either.Right -> either.b
-            }
-        }
+        val model: Model<T>? = if (modelId == null) null else view.getWithoutAuthorization(modelId)
 
         currentState = if (model == null) initialState else getStateByName(model.state)
         val transition = currentState.getTransitionForEvent(event)
@@ -102,12 +92,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
     internal fun preventedByGuards(event: E, userIdentity: UserIdentity, view: IModelView<*>): List<BlockedByGuard> {
         view as IModelView<T>
         val modelId = event.modelId
-        val model: Model<T>? = if (modelId == null) null else {
-            when (val either = view.get(modelId, AllowAll()).get()) {
-                is Either.Left -> throw RuntimeException()
-                is Either.Right -> either.b
-            }
-        }
+        val model: Model<T>? = if (modelId == null) null else view.getWithoutAuthorization(modelId)
         currentState = if (model == null) initialState else getStateByName(model.state)
         val transition = currentState.getTransitionForEvent(event) ?: throw RuntimeException("eventOccurred")
         return transition.verifyGuard(event, model, userIdentity)
@@ -129,12 +114,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
     }
 
     fun getEventTransitions(id: String): Either<Problem, List<String>> {
-        val model: Model<T>? = if (id == null) null else {
-            when (val either = modelView.get(id, AllowAll()).get()) {
-                is Either.Left -> throw RuntimeException()
-                is Either.Right -> either.b
-            }
-        }
+        val model = modelView.getWithoutAuthorization(id)
         val state = getStateByName(model?.state ?: return Either.left(Problem.notFound()))
         return Either.right(state.transitions.mapNotNull { it.trigger })
     }

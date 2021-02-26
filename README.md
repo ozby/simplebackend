@@ -14,6 +14,7 @@ Suitable for systems:
 
 * More reads than writes
 * Auditing is required
+* The system has complicated business logic, and you don't want to reimplement it on the frontend
 * Not expected to have millions of users
 * Uptime is not critical
 

@@ -11,9 +11,7 @@ object GameView : IModelView<GameProperties> {
 
     private val games = HashMap<String, Model<GameProperties>>()
 
-    override fun get(id: String, auth: Auth<Model<GameProperties>>): Auth<Model<GameProperties>> {
-        return auth.withValue(games[id])
-    }
+    override fun getWithoutAuthorization(id: String): Model<GameProperties>? = games[id]
 
     override fun create(model: Model<GameProperties>) {
         games[model.id] = model
@@ -23,14 +21,20 @@ object GameView : IModelView<GameProperties> {
         games[new.id] = new
     }
 
+    override fun delete(id: String) {
+        games.remove(id)
+    }
+
     fun getAll(authenticator: Auth<List<Model<GameProperties>>>): Auth<List<Model<GameProperties>>> {
         return authenticator.withValue(games.values.toList())
     }
 
-    fun history(id: String) = SimpleBackend.getEventsForModelId<Event>(id)
-        .map {
-            val userName = UserView.getByUserIdentityIdWithoutAuthorization(it.userIdentityId)?.properties?.firstName ?: it.userIdentityId
-            "$userName $it"
-        }
+    fun history(id: String): List<String> {
+        return SimpleBackend.getEventsForModelId<Event>(id)
+            .map {
+                val userName = UserView.getByUserIdentityIdWithoutAuthorization(it.userIdentityId)?.properties?.firstName ?: it.userIdentityId
+                "$userName $it"
+            }
+    }
 
 }

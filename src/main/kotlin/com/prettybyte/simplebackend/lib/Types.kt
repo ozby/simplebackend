@@ -25,9 +25,14 @@ data class Model<T : ModelProperties>(
 abstract class ModelProperties
 
 interface IModelView<T : ModelProperties> {
-    fun get(id: String, auth: Auth<Model<T>>): Auth<Model<T>>
+    fun get(id: String, auth: Auth<Model<T>>): Auth<Model<T>> {
+        return auth.withValue(getWithoutAuthorization(id))
+    }
+
+    fun getWithoutAuthorization(id: String): Model<T>?
     fun create(model: Model<T>)
     fun update(new: Model<T>)
+    fun delete(id: String)
 }
 
 /**
