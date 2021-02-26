@@ -20,7 +20,7 @@ fun parseEvent(eventName: String, modelId: String, params: String, userIdentityI
  * Returns user if state == active. Else null.
  */
 fun getActiveUser(userIdentity: UserIdentity): Model<UserProperties>? {
-    return when (val user = UserView.get(userIdentity.id, AuthorizeAll())) {
+    return when (val user = UserView.getByUserIdentityId(userIdentity.id, AuthorizeAll())) {
         is Left -> null
         is Right -> if (user.b?.state?.equals(UserStates.active.name) == true) {
             return user.b
