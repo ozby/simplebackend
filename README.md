@@ -2,6 +2,8 @@
 
 Simple Backend is a framework for building backend in Kotlin while avoiding as much complexity as possible.
 
+It is also an experiment where we test the hypothesis "It is a good idea to structure the whole system around state machines".
+
 ## Overview
 
 Status: As this is an experiment, you should absolutely not use this in production. There are no tests and the code quality is not great.
@@ -56,21 +58,6 @@ datacenter (99.995% uptime).
 
 In the future, we may allow more complex configurations that would enable redundancy.
 
-### Authentication
-
-Currently, only Google Sign-In is supported. The client should acquire a JWT from Google and that JWT should be set in the 'Authorization' header
-(as "Bearer ..."). In your application, you can access a UserIdentity object which will contain "subject" from the JWT. Most applications will want to have more
-information about the user than that, so they will have a User model that corresponds to the subject.
-
-### Authorization
-
-You must provide an implementation of the Authorizer interface so that SimpleServer knows if the user is authorized to create an event.
-
-When it comes to reading data, it is recommended that you implement authorization in the Views.
-
-One straight forward way is Role Based Access Control where you check if a specific role is stored on a User model. Just remember to verify updates on the User
-model so that the user cannot set the roles himself.
-
 ### GraphQL
 
 To modify the data on the server, you will use a GraphQL mutation ("createEvent") which is built in.
@@ -79,13 +66,22 @@ To query the backend, you GraphQL queries are used (you will build these yoursel
 
 At the moment, gRPC is used to manage subscribe to events (this will be handled with GraphQL in the future).
 
+### Authentication
+
+Currently, only Google Sign-In is supported. The client should acquire a JWT from Google and that JWT should be set in the 'Authorization' header
+(as "Bearer ..."). In your application, you can access a UserIdentity object which will contain "subject" from the JWT. Most applications will want to have more
+information about the user than that, so they will have a User model that corresponds to the subject.
+
+### Authorization
+
+You must provide an implementation of the IEventAuthorizer interface so that SimpleServer knows if the user is authorized to create events.
+
+When it comes to reading data, it is recommended that your views should wrap the data in an Auth object. This way the authorization must be explicit, so you
+cannot forget to authorize queries. See the examples for details how it can be used.
+
+There are many ways you can implement authorization. One straight forward way is Role Based Access Control where you check if a specific role is stored on a
+User model. Just remember to verify updates on the User model so that the user cannot set the roles himself.
+
 ## What if I need more than SimpleBackend can provide?
 
 It is possible to provide custom queries and modifications when configuring SimpleBackend, giving you full control.
-
-## Get started
-
-### Immutable
-
-Don't try to modify the parameters.
-

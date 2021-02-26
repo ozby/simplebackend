@@ -1,12 +1,12 @@
 package graphql
 
-import AuthorizeIfIsPlayer
+import AllowIfIsPlayer
 import GameProperties
-import RemoveIfIsNotPlayer
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import com.expediagroup.graphql.types.operations.Query
 import com.prettybyte.simplebackend.SimpleBackend
+import com.prettybyte.simplebackend.lib.AllowAll
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.ktorgraphql.AuthorizedContext
 import views.GameView
@@ -14,12 +14,12 @@ import views.GameView
 class GameQueryService : Query {
     fun game(id: String? = null, context: AuthorizedContext): List<Game> {
         if (id == null) {
-            return when (val either = GameView.getAll(RemoveIfIsNotPlayer(context.userIdentity))) {
+            return when (val either = GameView.getAll(AllowAll()).get()) {
                 is Left -> throw either.a.asException()
-                is Right -> either.b.map { Game(it) }
+                is Right -> either.b!!.map { Game(it) }
             }
         }
-        return when (val either = GameView.get(id, AuthorizeIfIsPlayer(context.userIdentity))) {
+        return when (val either = GameView.get(id, AllowIfIsPlayer(context.userIdentity)).get()) {
             is Left -> throw either.a.asException()
             is Right -> if (either.b == null) emptyList() else listOf(Game(either.b!!))
         }

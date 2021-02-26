@@ -1,7 +1,8 @@
 import EventAuthorizer.Roles.editor
 import arrow.core.Either
 import com.prettybyte.simplebackend.SimpleBackend
-import com.prettybyte.simplebackend.lib.AuthorizeAll
+import com.prettybyte.simplebackend.lib.AllowAll
+
 import com.prettybyte.simplebackend.lib.IEventAuthorizer
 import com.prettybyte.simplebackend.lib.Problem
 import com.prettybyte.simplebackend.lib.UserIdentity
@@ -20,7 +21,7 @@ object EventAuthorizer : IEventAuthorizer<Event> {
 
     override fun onExchangeJWT(jws: Jws<Claims>): Problem? {
         val subject = jws.body.subject
-        when (val either = UserView.getByUserIdentityId(subject, AuthorizeAll())) {
+        when (val either = UserView.getByUserIdentityId(subject, AllowAll()).get()) {
             is Either.Left -> return either.a
         }
 

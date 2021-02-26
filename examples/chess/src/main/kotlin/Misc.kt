@@ -1,6 +1,6 @@
 import arrow.core.Either.Left
 import arrow.core.Either.Right
-import com.prettybyte.simplebackend.lib.AuthorizeAll
+import com.prettybyte.simplebackend.lib.AllowAll
 import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
@@ -20,7 +20,7 @@ fun parseEvent(eventName: String, modelId: String, params: String, userIdentityI
  * Returns user if state == active. Else null.
  */
 fun getActiveUser(userIdentity: UserIdentity): Model<UserProperties>? {
-    return when (val user = UserView.getByUserIdentityId(userIdentity.id, AuthorizeAll())) {
+    return when (val user = UserView.getByUserIdentityId(userIdentity.id, AllowAll()).get()) {
         is Left -> null
         is Right -> if (user.b?.state?.equals(UserStates.active.name) == true) {
             return user.b

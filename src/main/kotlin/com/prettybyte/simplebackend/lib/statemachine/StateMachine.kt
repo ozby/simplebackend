@@ -9,6 +9,8 @@ const val initial = "initial"
 
 class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val thisType: KClass<T>) {
 
+    // TODO: Scope control (see https://kotlinlang.org/docs/type-safe-builders.html#scope-control-dslmarker)
+
     internal lateinit var modelView: IModelView<T>
     val onStateChangeListeners: MutableList<in suspend (Model<T>) -> Unit> = mutableListOf<suspend (Model<T>) -> Unit>()
     private lateinit var currentState: State<T, E, ModelStates>
@@ -44,7 +46,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
 
         val modelId = event.modelId
         val model: Model<T>? = if (modelId == null) null else {
-            when (val either = view.get(modelId, AuthorizeAll())) {
+            when (val either = view.get(modelId, AllowAll()).get()) {
                 is Either.Left -> return Either.Left(either.a)
                 is Either.Right -> either.b
             }
@@ -86,7 +88,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         view as IModelView<T>
         val modelId = event.modelId
         val model: Model<T>? = if (modelId == null) null else {
-            when (val either = view.get(modelId, AuthorizeAll())) {
+            when (val either = view.get(modelId, AllowAll()).get()) {
                 is Either.Left -> throw RuntimeException()
                 is Either.Right -> either.b
             }
@@ -101,7 +103,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         view as IModelView<T>
         val modelId = event.modelId
         val model: Model<T>? = if (modelId == null) null else {
-            when (val either = view.get(modelId, AuthorizeAll())) {
+            when (val either = view.get(modelId, AllowAll()).get()) {
                 is Either.Left -> throw RuntimeException()
                 is Either.Right -> either.b
             }
@@ -128,7 +130,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
 
     fun getEventTransitions(id: String): Either<Problem, List<String>> {
         val model: Model<T>? = if (id == null) null else {
-            when (val either = modelView.get(id, AuthorizeAll())) {
+            when (val either = modelView.get(id, AllowAll()).get()) {
                 is Either.Left -> throw RuntimeException()
                 is Either.Right -> either.b
             }

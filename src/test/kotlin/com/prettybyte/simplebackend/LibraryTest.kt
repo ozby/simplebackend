@@ -12,12 +12,12 @@ import kotlin.test.Test
 class LibraryTest {
     @Test
     fun testSomeLibraryMethod() {
-        val classUnderTest = State<Game, Event, GameStates>("my state")
+        val classUnderTest = State<Game, IEvent, GameStates>("my state")
         classUnderTest.enterAction(::printGame)
     }
 }
 
-fun printGame(model: Model<Game>?, event: Event) {
+fun printGame(model: Model<Game>?, event: IEvent) {
     if (model == null) {
         println("Game is null")
     } else {
