@@ -21,7 +21,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         modelView = view as IModelView<T>
     }
 
-    fun initialState(init: State<T, E, ModelStates>.() -> Unit) {
+    fun voidState(init: State<T, E, ModelStates>.() -> Unit) {
         val state = State<T, E, ModelStates>(initial)
         state.init()
         initialState = state

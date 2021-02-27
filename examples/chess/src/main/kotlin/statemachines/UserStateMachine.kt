@@ -2,7 +2,7 @@ package statemachines
 
 import CreateUserParams
 import Event
-import EventAuthorizer.Roles.editor
+import EventAuthorizer.Roles.player
 import EventAuthorizer.Roles.viewer
 import UserProperties
 import com.prettybyte.simplebackend.lib.BlockedByGuard
@@ -25,7 +25,7 @@ enum class UserStates {
 
 fun userStateMachine(): StateMachine<UserProperties, Event, UserStates> =
     stateMachine {
-        initialState {
+        voidState {
             transition(triggeredByEvent = createUser, targetState = active) {
                 guard(::createdByCorrectIdentity)
                 guard(::userNotAlreadyCreated)
@@ -65,7 +65,7 @@ fun newUser(eventParams: EventParams): UserProperties {
         userIdentityId = eventParams.userIdentityId,
         firstName = eventParams.firstName,
         lastName = eventParams.lastName,
-        roles = setOf(viewer, editor)
+        roles = setOf(viewer, player)
     )
 }
 

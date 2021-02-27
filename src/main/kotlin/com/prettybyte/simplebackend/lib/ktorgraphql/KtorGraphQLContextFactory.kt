@@ -26,7 +26,7 @@ class KtorGraphQLContextFactory : GraphQLContextFactory<AuthorizedContext, Appli
     private var googleKeysCached: GoogleKeys? = null
     private val httpClient = HttpClient.newBuilder().build();
 
-    override fun generateContext(request: ApplicationRequest): AuthorizedContext {
+    override suspend fun generateContext(request: ApplicationRequest): AuthorizedContext {
         val jwtString =
             request.headers["Authorization"]?.substring("Bearer ".length) ?: throw RuntimeException("Authorization header with Bearer [JWT] is required")
 

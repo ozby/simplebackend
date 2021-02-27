@@ -8,8 +8,8 @@ import org.gradle.kotlin.dsl.proto
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.4.30"
-    kotlin("plugin.serialization") version "1.4.30"
+    kotlin("jvm") version "1.4.31"
+    kotlin("plugin.serialization") version "1.4.31"
     `java-library`
     id("com.google.protobuf") version "0.8.14"
 }
@@ -24,7 +24,7 @@ val coroutinesVersion = "1.4.2"
 val arrow_version = "0.11.0"
 val exposedVersion = "0.28.1"
 val ktorVersion = "1.5.1"
-val graphqlKotlinVersion = "4.0.0-alpha.12"
+val graphqlKotlinVersion = "4.0.0-alpha.14"
 
 val grpcVersion = "1.34.0"
 val grpcKotlinVersion = "1.0.0"

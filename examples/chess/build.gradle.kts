@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.4.30"
-    kotlin("plugin.serialization") version "1.4.30"
+    kotlin("jvm") version "1.4.31"
+    kotlin("plugin.serialization") version "1.4.31"
 }
 
 val compileKotlin: KotlinCompile by tasks
@@ -12,7 +12,7 @@ val coroutinesVersion = "1.4.2"
 val arrowVersion = "0.11.0"
 val exposedVersion = "0.28.1"
 val ktorVersion = "1.5.1"
-val graphqlKotlinVersion = "4.0.0-alpha.12"
+val graphqlKotlinVersion = "4.0.0-alpha.14"
 
 
 val grpcVersion = "1.34.0"

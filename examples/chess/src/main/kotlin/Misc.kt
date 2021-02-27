@@ -12,6 +12,11 @@ fun parseEvent(eventName: String, modelId: String, params: String, userIdentityI
         createGame -> CreateGame(modelId, params, userIdentityId)
         makeMove -> MakeMove(modelId, params, userIdentityId)
         createUser -> CreateUser(modelId, params, userIdentityId)
+        selectPiece -> SelectPiece(modelId, params, userIdentityId)
+        resign -> Resign(modelId, params, userIdentityId)
+        proposeDraw -> ProposeDraw(modelId, params, userIdentityId)
+        acceptDraw -> AcceptDraw(modelId, params, userIdentityId)
+        declineDraw -> DeclineDraw(modelId, params, userIdentityId)
         else -> throw RuntimeException("Could not parse event with name '$eventName'")
     }
 }

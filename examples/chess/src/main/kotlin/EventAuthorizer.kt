@@ -1,4 +1,4 @@
-import EventAuthorizer.Roles.editor
+import EventAuthorizer.Roles.player
 import com.prettybyte.simplebackend.lib.IEventAuthorizer
 import com.prettybyte.simplebackend.lib.Problem
 import com.prettybyte.simplebackend.lib.UserIdentity
@@ -10,7 +10,7 @@ object EventAuthorizer : IEventAuthorizer<Event> {
 
     // Available roles:
     enum class Roles {
-        editor,
+        player,
         viewer,
     }
 
@@ -20,9 +20,14 @@ object EventAuthorizer : IEventAuthorizer<Event> {
 
     override fun isAllowedToCreateEvent(userIdentity: UserIdentity, event: Event): Boolean {
         return when (event) {
-            is CreateGame -> hasRole(editor, userIdentity)
-            is MakeMove -> hasRole(editor, userIdentity)
+            is CreateGame -> hasRole(player, userIdentity)
+            is MakeMove -> hasRole(player, userIdentity)
             is CreateUser -> event.getParams().userIdentityId == userIdentity.id
+            is SelectPiece -> hasRole(player, userIdentity)
+            is Resign -> hasRole(player, userIdentity)
+            is ProposeDraw -> hasRole(player, userIdentity)
+            is AcceptDraw -> hasRole(player, userIdentity)
+            is DeclineDraw -> hasRole(player, userIdentity)
         }
     }
 
