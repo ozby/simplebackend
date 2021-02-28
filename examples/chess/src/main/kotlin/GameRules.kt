@@ -1,7 +1,7 @@
 import Piece.*
 import com.prettybyte.simplebackend.lib.*
-import statemachines.GameStates
-import statemachines.GameStates.*
+import statemachines.GameState
+import statemachines.GameState.*
 
 object GameRules {
 
@@ -33,7 +33,7 @@ object GameRules {
         if (!isSquareOnBoard(from) || !isSquareOnBoard(to)) {
             return BlockedByGuard("Not a valid square")
         }
-        val validMoves = calculateAllValidMoves(model);
+        val validMoves = calculateAllValidMoves(model.properties.pieces, GameState.valueOf(model.state), verifyIsChecked = true)
         return if (validMoves.contains(Pair(from, to))) null else BlockedByGuard("Illegal move")
     }
 
@@ -54,40 +54,39 @@ object GameRules {
 
     fun makeTurn(model: Model<GameProperties>, params: EventParams): GameProperties {
         params as MakeMoveParams
-        model.properties
-
         val from = params.from
         val to = params.to
-        val oldBoard = model.properties.pieces
-        
-        val newBoard = oldBoard.toMutableList()
-        newBoard[squareToIndex(to)] = oldBoard[squareToIndex(from)]
-        newBoard[squareToIndex(from)] = ""
-        if (params.from == "e1" && params.to == "g1") {
-            newBoard[squareToIndex("f1")] = oldBoard[squareToIndex("h1")]
-            newBoard[squareToIndex("h1")] = ""
-        }
+        val piecesAfter = piecesAfterMove(model.properties.pieces, from, to)
         return GameProperties(
-            pieces = newBoard,
+            pieces = piecesAfter,
             whitePlayerId = model.properties.whitePlayerId,
             blackPlayerId = model.properties.blackPlayerId
         )
     }
 
-    fun isWhiteCheckMate(game: GameProperties): Boolean {
-        return !game.pieces.contains("wk")
+    private fun piecesAfterMove(piecesBefore: List<String>, from: String, to: String): List<String> {
+        val piecesAfter = piecesBefore.toMutableList()
+        piecesAfter[squareToIndex(to)] = piecesBefore[squareToIndex(from)]
+        piecesAfter[squareToIndex(from)] = ""
+        if (from == "e1" && to == "g1") {
+            piecesAfter[squareToIndex("f1")] = piecesBefore[squareToIndex("h1")]
+            piecesAfter[squareToIndex("h1")] = ""
+        }
+        return piecesAfter
     }
 
-    fun isBlackCheckMate(game: GameProperties): Boolean {
-        return !game.pieces.contains("bk")
+    fun isWhiteCheckMate(model: Model<GameProperties>): Boolean {
+        return isWhiteCheck(model.properties.pieces) && calculateAllValidMoves(model.properties.pieces, `White turn`, true).isEmpty()
     }
 
-    fun calculateAllValidMoves(model: Model<GameProperties>): Set<Pair<String, String>> {
-        val state = GameStates.valueOf(model.state)
+    fun isBlackCheckMate(model: Model<GameProperties>): Boolean {
+        return isBlackCheck(model.properties.pieces) && calculateAllValidMoves(model.properties.pieces, `Black turn`, true).isEmpty()
+    }
+
+    fun calculateAllValidMoves(pieces: List<String>, state: GameState, verifyIsChecked: Boolean): Set<Pair<String, String>> {
         if (state == `Black victory` || state == `White victory`) {
             return emptySet()
         }
-        val pieces = model.properties.pieces
         val validMoves = mutableSetOf<Pair<String, String>>()
         val board = Board(pieces)
         for (x in 0..7) {
@@ -98,15 +97,35 @@ object GameRules {
                 }
             }
         }
-        return validMoves   // TODO: should remove any move that leaves player with a threatened king
+        return if (verifyIsChecked) {
+            validMoves.filter { !willMoveLeaveKingChecked(pieces, state, it) }.toSet()
+        } else {
+            validMoves
+        }
     }
 
-    fun whiteHasPawnOnEdge(gameProperties: GameProperties): Boolean {
-        return gameProperties.pieces.subList(56, 64).contains("wp")
+    private fun willMoveLeaveKingChecked(piecesBeforeMove: List<String>, state: GameState, move: Pair<String, String>): Boolean {
+        // figure out if the opponent can take the king next move
+        val piecesAfterMove = piecesAfterMove(piecesBeforeMove, move.first, move.second)
+        return if (state == `White turn`) isWhiteCheck(piecesAfterMove) else isBlackCheck(piecesAfterMove)
     }
 
-    fun blackHasPawnOnEdge(gameProperties: GameProperties): Boolean {
-        return gameProperties.pieces.subList(0, 8).contains("bp")
+    private fun isWhiteCheck(pieces: List<String>): Boolean {
+        val kingIndex = pieces.indexOf("wk")
+        return calculateAllValidMoves(pieces, `Black turn`, verifyIsChecked = false).any { squareToIndex(it.second) == kingIndex }
+    }
+
+    private fun isBlackCheck(pieces: List<String>): Boolean {
+        val kingIndex = pieces.indexOf("bk")
+        return calculateAllValidMoves(pieces, `White turn`, verifyIsChecked = false).any { squareToIndex(it.second) == kingIndex }
+    }
+
+    fun whiteHasPawnOnEdge(model: Model<GameProperties>): Boolean {
+        return model.properties.pieces.subList(56, 64).contains("wp")
+    }
+
+    fun blackHasPawnOnEdge(model: Model<GameProperties>): Boolean {
+        return model.properties.pieces.subList(0, 8).contains("bp")
     }
 
     fun isSwitchablePiece(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
@@ -131,7 +150,7 @@ object GameRules {
         return model.properties.copy(pieces = piecesAfter)
     }
 
-    fun isAutomaticDraw(gameProperties: GameProperties): Boolean = isStalemate() || isDeadPosition() || isFivefoldRepetition()
+    fun isAutomaticDraw(model: Model<GameProperties>): Boolean = isStalemate(model) || isDeadPosition() || isFivefoldRepetition()
 
     fun canClaimDraw(model: Model<GameProperties>): Boolean = isThreefoldRepetition() || isFiftyMoves()
 
@@ -143,8 +162,13 @@ object GameRules {
         return null // TODO
     }
 
-    private fun isStalemate(): Boolean {
-        return false // TODO
+    private fun isStalemate(model: Model<GameProperties>): Boolean {
+        val pieces = model.properties.pieces
+        return when (GameState.valueOf(model.state)) {
+            `White turn` -> !isWhiteCheck(pieces) && calculateAllValidMoves(pieces, `White turn`, true).isEmpty()
+            `Black turn` -> !isBlackCheck(pieces) && calculateAllValidMoves(pieces, `Black turn`, true).isEmpty()
+            else -> throw Exception()
+        }
     }
 
     private fun isDeadPosition(): Boolean {

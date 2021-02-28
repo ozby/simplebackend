@@ -25,9 +25,9 @@ import makeMove
 import proposeDraw
 import resign
 import selectPiece
-import statemachines.GameStates.*
+import statemachines.GameState.*
 
-enum class GameStates {
+enum class GameState {
     `White turn`,
     `Black turn`,
     `White victory`,
@@ -38,7 +38,7 @@ enum class GameStates {
     `Draw has been proposed`,
 }
 
-fun createGameStateMachine(): StateMachine<GameProperties, Event, GameStates> =
+fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
     stateMachine {
         voidState {
             transition(triggeredByEvent = createGame, targetState = `White turn`) {

@@ -1,7 +1,7 @@
 import GameRules.squareToIndex
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
-import statemachines.GameStates
+import statemachines.GameState
 import statemachines.UserStates
 import views.UserView
 import kotlin.test.BeforeTest
@@ -23,7 +23,7 @@ class GameRulesTest {
     val gameId = "gameId"
 
     val freshGameProperties = GameRules.newGame(CreateGameParams(whitePlayerUserId = user1Id, blackPlayerUserId = user2Id))
-    val freshGameModel = Model(id = gameId, state = GameStates.`White turn`.name, properties = freshGameProperties, graphQlName = "game")
+    val freshGameModel = Model(id = gameId, state = GameState.`White turn`.name, properties = freshGameProperties, graphQlName = "game")
     val moveA2A3Event = MakeMove(gameId = gameId, params = """{"from": "a2", "to": "a3"}""", userIdentityId1)
     val moveToIllegalSquareEvent = MakeMove(gameId = gameId, params = """{"from": "a2", "to": "j9"}""", userIdentityId1)
 

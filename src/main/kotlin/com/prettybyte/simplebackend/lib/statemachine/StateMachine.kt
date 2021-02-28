@@ -59,7 +59,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         newState.enterState(!isDryRun && performActions, model, event)
 
         // Is there any transition that triggers automatically?
-        val autoTransition = newState.transitions.filter { it.triggeredIf != null && it.triggeredIf.invoke(updatedModel.properties) }.firstOrNull()
+        val autoTransition = newState.transitions.filter { it.triggeredIf != null && it.triggeredIf.invoke(updatedModel) }.firstOrNull()
         if (autoTransition != null) {   // TODO: must allow any number of automatic transitions
             autoTransition.currentState = newState
             val newerState = autoTransition.enterTransition(isDryRun) { getStateByName(it.name) }

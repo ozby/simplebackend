@@ -12,7 +12,7 @@ class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: St
 
     fun transition(
         triggeredByEvent: String? = null,
-        triggeredIf: ((T) -> Boolean)? = null,
+        triggeredIf: ((Model<T>) -> Boolean)? = null,
         targetState: ModelStates,
         init: Transition<T, E, ModelStates>.() -> Unit
     ) {  // TODO: triggeredByEvent should be E

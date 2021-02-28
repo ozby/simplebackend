@@ -4,7 +4,7 @@ import com.prettybyte.simplebackend.lib.*
 
 class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
     val trigger: String?,
-    val triggeredIf: ((T) -> Boolean)?,
+    val triggeredIf: ((Model<T>) -> Boolean)?,
     val targetState: ModelStates
 ) {
 
