@@ -55,7 +55,7 @@ class CreateUser(userId: String, params: String, userIdentityId: String) : Event
     override fun getParams(): CreateUserParams = Json.decodeFromString(params)
 }
 
-class SelectPiece(gameId: String, params: String, userIdentityId: String) : Event(
+class PromotePawn(gameId: String, params: String, userIdentityId: String) : Event(
     schemaVersion = 1,
     name = selectPiece,
     modelId = gameId,

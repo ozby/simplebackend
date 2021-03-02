@@ -1,4 +1,4 @@
-import GameRules.squareToIndex
+import Board.Companion.squareToIndex
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
 import statemachines.GameState
@@ -8,7 +8,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class GameRulesTest {
+class ChessRulesTest() {
 
     val userIdentityId1 = "userIdentityId1"
     val userIdentity1 = UserIdentity.fromTest(userIdentityId1)
@@ -53,8 +53,8 @@ class GameRulesTest {
 
     @Test
     fun isValidMove() {
-        assertTrue { GameRules.validateMove(freshGameModel, moveA2A3Event, userIdentity1) == null }
-        assertTrue { GameRules.validateMove(freshGameModel, moveToIllegalSquareEvent, userIdentity1) != null }
+        assertTrue { GameRules.`Validate move`(freshGameModel, moveA2A3Event, userIdentity1) == null }
+        assertTrue { GameRules.`Validate move`(freshGameModel, moveToIllegalSquareEvent, userIdentity1) != null }
     }
 
     @Test
@@ -63,4 +63,5 @@ class GameRulesTest {
         assertTrue { result.pieces[squareToIndex("a2")].isEmpty() }
         assertTrue { result.pieces[squareToIndex("a3")] == "wp" }
     }
+
 }

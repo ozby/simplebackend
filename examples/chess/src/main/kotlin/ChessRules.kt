@@ -1,11 +1,14 @@
+import Board.Companion.isSquareOnBoard
+import Board.Companion.squareToIndex
 import Piece.*
 import com.prettybyte.simplebackend.lib.*
 import statemachines.GameState
-import statemachines.GameState.*
+import statemachines.GameState.`Black turn`
+import statemachines.GameState.`White turn`
 
 object GameRules {
 
-    fun isCorrectPlayer(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity): BlockedByGuard? {
+    fun `Event comes from white player`(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity): BlockedByGuard? {
         if (userIdentity.id == computerPlayer) {
             return null
         }
@@ -13,14 +16,22 @@ object GameRules {
         if (game == null) {
             return BlockedByGuard("isCorrectPlayer: game was null")
         }
-        return when (game.state) {
-            `Black turn`.name -> if (game.properties.blackPlayerId != user.id) BlockedByGuard("Not your turn") else null
-            `White turn`.name -> if (game.properties.whitePlayerId != user.id) BlockedByGuard("Not your turn") else null
-            else -> null
-        }
+        return if (game.properties.whitePlayerId != user.id) BlockedByGuard("Not your turn") else null
     }
 
-    fun validateMove(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+
+    fun `Event comes from black player`(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity): BlockedByGuard? {
+        if (userIdentity.id == computerPlayer) {
+            return null
+        }
+        val user = getActiveUser(userIdentity) ?: return BlockedByGuard("Can't find user")
+        if (game == null) {
+            return BlockedByGuard("isCorrectPlayer: game was null")
+        }
+        return if (game.properties.blackPlayerId != user.id) BlockedByGuard("Not your turn") else null
+    }
+
+    fun `Validate move`(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
         val params = (event as MakeMove).getParams()
         if (model == null) {
             return BlockedByGuard("Game missing")
@@ -33,20 +44,14 @@ object GameRules {
         if (!isSquareOnBoard(from) || !isSquareOnBoard(to)) {
             return BlockedByGuard("Not a valid square")
         }
-        val validMoves = calculateAllValidMoves(model.properties.pieces, GameState.valueOf(model.state), verifyIsChecked = true)
+        val validMoves = calculateAllValidMoves(model.properties.pieces, GameState.valueOf(model.state))
         return if (validMoves.contains(Pair(from, to))) null else BlockedByGuard("Illegal move")
-    }
-
-    fun squareToIndex(from: String): Int {
-        val column = from.first()
-        val row = from.substring(1).toInt()
-        return (row - 1) * 8 + "abcdefgh".indexOfFirst { it == column }
     }
 
     fun newGame(params: EventParams): GameProperties {
         params as CreateGameParams
         return GameProperties(
-            pieces = setupEndgamePieces(),
+            pieces = setupPieces(),
             whitePlayerId = params.whitePlayerUserId,
             blackPlayerId = params.blackPlayerUserId
         )
@@ -64,29 +69,15 @@ object GameRules {
         )
     }
 
-    private fun piecesAfterMove(piecesBefore: List<String>, from: String, to: String): List<String> {
-        val piecesAfter = piecesBefore.toMutableList()
-        piecesAfter[squareToIndex(to)] = piecesBefore[squareToIndex(from)]
-        piecesAfter[squareToIndex(from)] = ""
-        if (from == "e1" && to == "g1") {
-            piecesAfter[squareToIndex("f1")] = piecesBefore[squareToIndex("h1")]
-            piecesAfter[squareToIndex("h1")] = ""
-        }
-        return piecesAfter
-    }
-
-    fun isWhiteCheckMate(model: Model<GameProperties>): Boolean {
+    fun `White is checkmate`(model: Model<GameProperties>): Boolean {
         return isWhiteCheck(model.properties.pieces) && calculateAllValidMoves(model.properties.pieces, `White turn`, true).isEmpty()
     }
 
-    fun isBlackCheckMate(model: Model<GameProperties>): Boolean {
+    fun `Black is checkmate`(model: Model<GameProperties>): Boolean {
         return isBlackCheck(model.properties.pieces) && calculateAllValidMoves(model.properties.pieces, `Black turn`, true).isEmpty()
     }
 
-    fun calculateAllValidMoves(pieces: List<String>, state: GameState, verifyIsChecked: Boolean): Set<Pair<String, String>> {
-        if (state == `Black victory` || state == `White victory`) {
-            return emptySet()
-        }
+    fun calculateAllValidMoves(pieces: List<String>, state: GameState, removeIfKingIsExposed: Boolean = true): Set<Pair<String, String>> {
         val validMoves = mutableSetOf<Pair<String, String>>()
         val board = Board(pieces)
         for (x in 0..7) {
@@ -97,39 +88,23 @@ object GameRules {
                 }
             }
         }
-        return if (verifyIsChecked) {
+        return if (removeIfKingIsExposed) {
             validMoves.filter { !willMoveLeaveKingChecked(pieces, state, it) }.toSet()
         } else {
             validMoves
         }
     }
 
-    private fun willMoveLeaveKingChecked(piecesBeforeMove: List<String>, state: GameState, move: Pair<String, String>): Boolean {
-        // figure out if the opponent can take the king next move
-        val piecesAfterMove = piecesAfterMove(piecesBeforeMove, move.first, move.second)
-        return if (state == `White turn`) isWhiteCheck(piecesAfterMove) else isBlackCheck(piecesAfterMove)
-    }
-
-    private fun isWhiteCheck(pieces: List<String>): Boolean {
-        val kingIndex = pieces.indexOf("wk")
-        return calculateAllValidMoves(pieces, `Black turn`, verifyIsChecked = false).any { squareToIndex(it.second) == kingIndex }
-    }
-
-    private fun isBlackCheck(pieces: List<String>): Boolean {
-        val kingIndex = pieces.indexOf("bk")
-        return calculateAllValidMoves(pieces, `White turn`, verifyIsChecked = false).any { squareToIndex(it.second) == kingIndex }
-    }
-
-    fun whiteHasPawnOnEdge(model: Model<GameProperties>): Boolean {
+    fun `White can promote pawn`(model: Model<GameProperties>): Boolean {
         return model.properties.pieces.subList(56, 64).contains("wp")
     }
 
-    fun blackHasPawnOnEdge(model: Model<GameProperties>): Boolean {
+    fun `Black can promote pawn`(model: Model<GameProperties>): Boolean {
         return model.properties.pieces.subList(0, 8).contains("bp")
     }
 
-    fun isSwitchablePiece(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
-        val piece = (event as SelectPiece).getParams().piece
+    fun `Is promotable piece`(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+        val piece = (event as PromotePawn).getParams().piece
         if (piece.length != 1) {
             return BlockedByGuard("Illegal piece")
         }
@@ -150,16 +125,35 @@ object GameRules {
         return model.properties.copy(pieces = piecesAfter)
     }
 
-    fun isAutomaticDraw(model: Model<GameProperties>): Boolean = isStalemate(model) || isDeadPosition() || isFivefoldRepetition()
+    fun `Automatic draw`(model: Model<GameProperties>): Boolean = isStalemate(model) || isDeadPosition(model) || isFivefoldRepetition()
 
     fun canClaimDraw(model: Model<GameProperties>): Boolean = isThreefoldRepetition() || isFiftyMoves()
 
-    fun drawWasRequiredDuringWhiteTurn(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
-        return null // TODO
+    private fun isWhiteCheck(pieces: List<String>): Boolean {
+        val kingIndex = pieces.indexOf("wk")
+        return calculateAllValidMoves(pieces, `Black turn`, removeIfKingIsExposed = false).any { squareToIndex(it.second) == kingIndex }
     }
 
-    fun drawWasRequiredDuringBlackTurn(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
-        return null // TODO
+    private fun isBlackCheck(pieces: List<String>): Boolean {
+        val kingIndex = pieces.indexOf("bk")
+        return calculateAllValidMoves(pieces, `White turn`, removeIfKingIsExposed = false).any { squareToIndex(it.second) == kingIndex }
+    }
+
+    private fun willMoveLeaveKingChecked(piecesBeforeMove: List<String>, state: GameState, move: Pair<String, String>): Boolean {
+        // figure out if the opponent can take the king next move
+        val piecesAfterMove = piecesAfterMove(piecesBeforeMove, move.first, move.second)
+        return if (state == `White turn`) isWhiteCheck(piecesAfterMove) else isBlackCheck(piecesAfterMove)
+    }
+
+    private fun piecesAfterMove(piecesBefore: List<String>, from: String, to: String): List<String> {
+        val piecesAfter = piecesBefore.toMutableList()
+        piecesAfter[squareToIndex(to)] = piecesBefore[squareToIndex(from)]
+        piecesAfter[squareToIndex(from)] = ""
+        if (from == "e1" && to == "g1") {
+            piecesAfter[squareToIndex("f1")] = piecesBefore[squareToIndex("h1")]
+            piecesAfter[squareToIndex("h1")] = ""
+        }
+        return piecesAfter
     }
 
     private fun isStalemate(model: Model<GameProperties>): Boolean {
@@ -171,8 +165,23 @@ object GameRules {
         }
     }
 
-    private fun isDeadPosition(): Boolean {
-        return false // TODO
+    private fun isDeadPosition(model: Model<GameProperties>): Boolean = isInsufficientMaterial(model)   // We are not trying to figure out other dead positions
+
+    private fun isInsufficientMaterial(model: Model<GameProperties>): Boolean {
+        // will only check for insufficient material
+        val remainingPieces = model.properties.pieces.filter { it.isNotEmpty() }
+        if (remainingPieces.size == 2) {   // king vs king
+            return true
+        }
+        if (remainingPieces.size == 3) {
+            return (remainingPieces.contains("wb") || remainingPieces.contains("bb")) ||    // king and bishop vs king
+                    (remainingPieces.contains("wn") || remainingPieces.contains("bn"))      // king and knight vs king
+        }
+        if (remainingPieces.filter { it.isNotEmpty() }.size == 4) {
+            return remainingPieces.contains("wb") && remainingPieces.contains("bb") &&  // King and bishop vs king and bishop of the same color as the opponent's bishop
+                    Board.isSquareWhite(remainingPieces.indexOf("wb")) == Board.isSquareWhite(remainingPieces.indexOf("bb"))
+        }
+        return false
     }
 
     private fun isThreefoldRepetition(): Boolean {
@@ -307,12 +316,6 @@ object GameRules {
         return squares
     }
 
-    private fun isSquareOnBoard(from: String): Boolean {
-        val column = from[0]
-        val row = from.substring(1).toInt()
-        return "abcdefgh".contains(column) && row in 1..8
-    }
-
     private fun setupPieces(): List<String> =
         listOf(
             "wr",
@@ -381,60 +384,4 @@ object GameRules {
             "br"
         )
 
-    private fun setupEndgamePieces(): List<String> =
-        List(64) {
-            when (it) {
-                54 -> "wp"
-                20 -> "wk"
-                58 -> "bk"
-                else -> ""
-            }
-        }
-
 }
-
-private class Board(val pieces: List<String>) {
-
-    fun getPieceAt(x: Int, y: Int): Pair<Piece, Color>? {
-        if (!(x in 0..7) || !(y in 0..7)) {
-            return null
-        }
-        val piece = pieces[y * 8 + x]
-        if (piece.isEmpty()) {
-            return null
-        }
-        val pieceType = piece.substring(1, 2)
-        val pieceColor = piece.substring(0, 1)
-        return Pair(getPieceFromAbbreviation(pieceType), if (pieceColor == "w") Color.white else Color.black)
-    }
-
-    private fun getPieceFromAbbreviation(pieceType: String): Piece {
-        return when (pieceType) {
-            "p" -> pawn
-            "r" -> rook
-            "b" -> bishop
-            "q" -> queen
-            "k" -> king
-            "n" -> knight
-            else -> throw RuntimeException()
-        }
-    }
-
-    companion object {
-        fun getSquareName(x: Int, y: Int): String {
-            return "abcdefgh"[x] + (y + 1).toString()
-        }
-
-        fun getSquareName(sq: SquareCoordinates): String = getSquareName(sq.first, sq.second)
-    }
-}
-
-enum class Piece(p: String) {
-    pawn("p"), rook("r"), knight("k"), bishop("b"), queen("q"), king("k")
-}
-
-enum class Color(c: String) {
-    white("w"), black("b")
-}
-
-typealias SquareCoordinates = Pair<Int, Int>

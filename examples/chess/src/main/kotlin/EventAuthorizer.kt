@@ -23,7 +23,7 @@ object EventAuthorizer : IEventAuthorizer<Event> {
             is CreateGame -> hasRole(player, userIdentity)
             is MakeMove -> hasRole(player, userIdentity)
             is CreateUser -> event.getParams().userIdentityId == userIdentity.id
-            is SelectPiece -> hasRole(player, userIdentity)
+            is PromotePawn -> hasRole(player, userIdentity)
             is Resign -> hasRole(player, userIdentity)
             is ProposeDraw -> hasRole(player, userIdentity)
             is AcceptDraw -> hasRole(player, userIdentity)
