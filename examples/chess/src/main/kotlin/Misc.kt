@@ -44,6 +44,12 @@ fun `Can only create game where I am a player`(model: Model<GameProperties>?, ev
     return null
 }
 
+fun `Update Users Ratings`(model: Model<GameProperties>): Event {
+    val params = """{"draw": true}"""
+    return UpdateUsersRating(userId = model.properties.whitePlayerId, params = params, UserIdentity.system().id)
+}
+
+
 const val computerPlayer = "Computer player"
 
 val systemUserIdentity = UserIdentity("perhaps a secret system user")

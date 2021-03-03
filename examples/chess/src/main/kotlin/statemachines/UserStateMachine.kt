@@ -72,3 +72,4 @@ fun newUser(eventParams: EventParams): UserProperties {
 fun sendWelcomeEmail(model: Model<UserProperties>?, event: Event): Unit {
     println("Sending welcome email (not implemented)")
 }
+

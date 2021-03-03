@@ -14,7 +14,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
     internal lateinit var modelView: IModelView<T>
     val onStateChangeListeners: MutableList<in suspend (Model<T>) -> Unit> = mutableListOf<suspend (Model<T>) -> Unit>()
     private lateinit var currentState: State<T, E, ModelStates>
-    private val states = mutableListOf<State<T, E, ModelStates>>()
+    internal val states = mutableListOf<State<T, E, ModelStates>>()
     private lateinit var initialState: State<T, E, ModelStates>
 
     internal fun setView(view: IModelView<*>) {

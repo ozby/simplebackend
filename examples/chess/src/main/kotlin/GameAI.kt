@@ -30,6 +30,7 @@ private fun promotePawn(model: Model<GameProperties>) {
 }
 
 private fun calculateMove(model: Model<GameProperties>) {
+    // first see if we should propose draw
     if (whiteIsAhead(model) &&
         !SimpleBackend.getEventsForModelId<Event>(model.id).any { it.name == proposeDraw }
     ) {
@@ -39,7 +40,7 @@ private fun calculateMove(model: Model<GameProperties>) {
         return
     }
 
-    val validMoves = GameRules.calculateAllValidMoves(model.properties.pieces, valueOf(model.state))
+    val validMoves = calculateAllValidMoves(model.properties.pieces, valueOf(model.state), gameId = model.id)
     val selectedMove = validMoves.random(rnd)
     val params = """{"from": "${selectedMove.first}", "to": "${selectedMove.second}"}"""
     val event = MakeMove(gameId = model.id, params = params, userIdentityId = computerPlayer)

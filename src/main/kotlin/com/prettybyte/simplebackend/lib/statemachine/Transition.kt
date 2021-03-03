@@ -1,5 +1,6 @@
 package com.prettybyte.simplebackend.lib.statemachine
 
+import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.*
 
 class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
@@ -13,8 +14,9 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
     private lateinit var eventParams: EventParams
     private lateinit var effectCreateModelFunction: (EventParams) -> T
     private var effectUpdateModelFunction: ((Model<T>, EventParams) -> T)? = null
+    private var effectCreateEventFunction: ((Model<T>) -> E)? = null
     private var model: T? = null
-    private val guardFunctions: MutableList<(Model<T>?, E, UserIdentity) -> BlockedByGuard?> = mutableListOf()
+    internal val guardFunctions: MutableList<(Model<T>?, E, UserIdentity) -> BlockedByGuard?> = mutableListOf()
 
     fun effectCreateModel(f: (EventParams) -> T) {
         effectCreateModelFunction = f
@@ -22,6 +24,10 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
 
     fun effectUpdateModel(f: (Model<T>, EventParams) -> T) {
         effectUpdateModelFunction = f
+    }
+
+    fun effectCreateEvent(f: ((Model<T>) -> E)) {
+        effectCreateEventFunction = f
     }
 
     fun guard(guard: (Model<T>?, E, UserIdentity) -> BlockedByGuard?) {
@@ -64,20 +70,22 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
             }
             return created
         }
+
         if (modelBefore == null) {
             throw RuntimeException()
         }
 
-
-        if (effectUpdateModelFunction != null && modelBefore != null) {
-            if (modelBefore == null) {
-                throw RuntimeException("executeEffect")
-            }
+        if (effectUpdateModelFunction != null) {
             val newModel = modelBefore.copy(state = newState.name, properties = effectUpdateModelFunction!!.invoke(modelBefore, eventParams))
             if (!isDryRun) {
                 view.update(newModel)
             }
             return newModel
+        }
+
+        if (effectCreateEventFunction != null) {
+            val createdEvent = effectCreateEventFunction!!.invoke(modelBefore)
+            SimpleBackend.processEvent(createdEvent, eventParametersJson = createdEvent.params, UserIdentity.system())
         }
 
         val modelWithUpdatedState = modelBefore.copy(state = newState.name)

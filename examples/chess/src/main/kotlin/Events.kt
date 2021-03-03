@@ -63,6 +63,7 @@ class PromotePawn(gameId: String, params: String, userIdentityId: String) : Even
     userIdentityId = userIdentityId
 ) {
     override fun getParams(): SelectPieceParams = Json.decodeFromString(params)
+    override fun toString(): String = "promoted pawn"
 }
 
 class Resign(gameId: String, params: String, userIdentityId: String) : Event(
@@ -73,6 +74,7 @@ class Resign(gameId: String, params: String, userIdentityId: String) : Event(
     userIdentityId = userIdentityId
 ) {
     override fun getParams(): ResignParams = Json.decodeFromString(params)
+    override fun toString(): String = "resigned"
 }
 
 class ProposeDraw(gameId: String, params: String, userIdentityId: String) : Event(
@@ -83,6 +85,7 @@ class ProposeDraw(gameId: String, params: String, userIdentityId: String) : Even
     userIdentityId = userIdentityId
 ) {
     override fun getParams(): ProposeDrawParams = Json.decodeFromString(params)
+    override fun toString(): String = "proposed draw"
 }
 
 class AcceptDraw(gameId: String, params: String, userIdentityId: String) : Event(
@@ -93,16 +96,28 @@ class AcceptDraw(gameId: String, params: String, userIdentityId: String) : Event
     userIdentityId = userIdentityId
 ) {
     override fun getParams(): AcceptDrawParams = Json.decodeFromString(params)
+    override fun toString(): String = "accepted draw"
 }
 
 class DeclineDraw(gameId: String, params: String, userIdentityId: String) : Event(
     schemaVersion = 1,
-    name = proposeDraw,
+    name = declineDraw,
     modelId = gameId,
     params = params,
     userIdentityId = userIdentityId
 ) {
     override fun getParams(): DeclineDrawParams = Json.decodeFromString(params)
+    override fun toString(): String = "declined draw"
+}
+
+class UpdateUsersRating(userId: String, params: String, userIdentityId: String) : Event(
+    schemaVersion = 1,
+    name = proposeDraw,
+    modelId = userId,
+    params = params,
+    userIdentityId = userIdentityId
+) {
+    override fun getParams(): UpdateUsersRatingParams = Json.decodeFromString(params)
 }
 
 @Serializable
@@ -128,3 +143,6 @@ data class AcceptDrawParams(val test: String) : EventParams()
 
 @Serializable
 data class DeclineDrawParams(val test: String) : EventParams()
+
+@Serializable
+data class UpdateUsersRatingParams(val test: String) : EventParams()

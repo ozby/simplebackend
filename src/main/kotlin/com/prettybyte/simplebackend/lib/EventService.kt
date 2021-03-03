@@ -62,7 +62,8 @@ class EventService<E : IEvent>(
                 performActions = false,
                 withGuards = false,
                 notifyListeners = false,
-                eventOptions = EventOptions(dryRun = false)
+                eventOptions = EventOptions(dryRun = false),
+                userIdentity = UserIdentity.system()
             )) {
                 is Left -> throw RuntimeException(result.a.toString())
             }
@@ -133,7 +134,7 @@ class EventService<E : IEvent>(
         eventParametersJson: String = "",
         storeEvent: Boolean = true,
         performActions: Boolean = true,
-        userIdentity: UserIdentity? = null,
+        userIdentity: UserIdentity,
         withGuards: Boolean = true,
         notifyListeners: Boolean = true,
     ): Either<Problem, Model<out ModelProperties>?> {

@@ -28,6 +28,7 @@ object EventAuthorizer : IEventAuthorizer<Event> {
             is ProposeDraw -> hasRole(player, userIdentity)
             is AcceptDraw -> hasRole(player, userIdentity)
             is DeclineDraw -> hasRole(player, userIdentity)
+            is UpdateUsersRating -> userIdentity.isSystem()
         }
     }
 

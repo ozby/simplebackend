@@ -1,13 +1,17 @@
 package com.prettybyte.simplebackend
 
 import arrow.core.Either
+import arrow.core.Left
+import arrow.core.Right
 import com.expediagroup.graphql.generator.TopLevelObject
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.prettybyte.simplebackend.lib.*
 import com.prettybyte.simplebackend.lib.ktorgraphql.GraphQLHelper
 import com.prettybyte.simplebackend.lib.ktorgraphql.getGraphQLServer
 import com.prettybyte.simplebackend.lib.ktorgraphql.schema.EventMutationService
+import com.prettybyte.simplebackend.lib.statemachine.State
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
+import com.prettybyte.simplebackend.lib.statemachine.Transition
 import io.grpc.Server
 import io.grpc.ServerBuilder
 import io.ktor.application.*
@@ -133,6 +137,11 @@ internal class SimpleBackendWrapped<E : IEvent>(
         val stateMachine = managedModels.find { it.kClass == kClass }?.stateMachine ?: return Either.left(Problem.generalProblem())
         return stateMachine.getEventTransitions(id)
     }
+
+    fun getStateMachine(kClass: KClass<out ModelProperties>): Either<Problem, StateMachine<out ModelProperties, E, out Enum<*>>> {
+        val sm = managedModels.find { it.kClass == kClass }?.stateMachine ?: return Either.left(Problem.generalProblem())
+        return Either.Right(sm)
+    }
 }
 
 fun logAndMakeInternalException(e: Exception): Throwable {
@@ -186,4 +195,27 @@ object SimpleBackend {
 
     fun getTransitions(kClass: KClass<out ModelProperties>, id: String): Either<Problem, List<String>> = sb.getTransitions(kClass, id)
 
+    fun <E : IEvent> getStateMachineDescription(kClass: KClass<out ModelProperties>): Either<Problem, StateMachineDescription> =
+        when (val either = sb.getStateMachine(kClass)) {
+            is Either.Left -> Left(either.a)
+            is Either.Right -> Right(StateMachineDescription(either.b))
+        }
+}
+
+data class StateMachineDescription(private val stateMachine: StateMachine<out ModelProperties, out IEvent, out Enum<out Enum<*>>>) {
+    val states = stateMachine.states.map { StateDescription(it) }
+}
+
+data class StateDescription(private val state: State<out ModelProperties, out IEvent, out Enum<out Enum<*>>>) {
+    val name = state.name
+    val transitions = state.transitions.map { TransitionDescription(it as Transition<out ModelProperties, out IEvent, Enum<*>>) }
+}
+
+class TransitionDescription(private val transition: Transition<out ModelProperties, out IEvent, Enum<*>>) {
+    val targetState = transition.targetState.name
+    val guards = transition.guardFunctions.map {
+        val funString = it.toString()
+        val startIndex = funString.indexOf("`") + 1
+        funString.substring(startIndex, funString.indexOf("`", startIndex + 1))
+    }
 }

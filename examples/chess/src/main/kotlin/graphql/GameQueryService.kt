@@ -1,11 +1,14 @@
 package graphql
 
 import AllowIfIsPlayer
+import Event
 import GameProperties
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import com.expediagroup.graphql.types.operations.Query
 import com.prettybyte.simplebackend.SimpleBackend
+import com.prettybyte.simplebackend.StateDescription
+import com.prettybyte.simplebackend.StateMachineDescription
 import com.prettybyte.simplebackend.lib.AllowAll
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.ktorgraphql.AuthorizedContext
@@ -24,6 +27,13 @@ class GameQueryService : Query {
             is Right -> if (either.b == null) emptyList() else listOf(Game(either.b!!))
         }
     }
+
+    fun statemachine(): StateMachineDescriptionGraphQL? {
+        return when (val sm = SimpleBackend.getStateMachineDescription<Event>(GameProperties::class)) {
+            is Left -> null
+            is Right -> StateMachineDescriptionGraphQL(sm.b)
+        }
+    }
 }
 
 class Game(private val model: Model<GameProperties>) {
@@ -39,4 +49,15 @@ class Game(private val model: Model<GameProperties>) {
             is Right -> transitions.b
         }
     }
+
+
+}
+
+class StateMachineDescriptionGraphQL(private val smd: StateMachineDescription) {
+    fun states() = smd.states.map { StateDescriptionGraphQL(it) }
+}
+
+class StateDescriptionGraphQL(private val state: StateDescription) {
+    fun name() = state.name
+    fun transitions() = state.transitions.map { "${it.targetState} (guards: ${it.guards.joinToString(", ")})" }
 }

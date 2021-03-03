@@ -2,29 +2,30 @@ package statemachines
 
 import Event
 import GameProperties
-import GameRules.`Automatic draw`
-import GameRules.`Black can promote pawn`
-import GameRules.`Black is checkmate`
-import GameRules.`Event comes from black player`
-import GameRules.`Event comes from white player`
-import GameRules.`Is promotable piece`
-import GameRules.`Validate move`
-import GameRules.`White can promote pawn`
-import GameRules.`White is checkmate`
-import GameRules.makeTurn
-import GameRules.newGame
-import GameRules.switchPawn
+import `Automatic draw`
+import `Black can promote pawn`
+import `Black is checkmate`
 import `Can only create game where I am a player`
+import `Event comes from black player`
+import `Event comes from white player`
+import `Is promotable piece`
+import `Update Users Ratings`
+import `Validate move`
+import `White can promote pawn`
+import `White is checkmate`
 import acceptDraw
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import com.prettybyte.simplebackend.lib.statemachine.stateMachine
 import createGame
 import declineDraw
 import makeMove
+import makeTurn
+import newGame
 import proposeDraw
 import resign
 import selectPiece
 import statemachines.GameState.*
+import switchPawn
 
 enum class GameState {
     `White turn`,
@@ -70,7 +71,9 @@ fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
                 effectUpdateModel(::makeTurn)
             }
             transition(triggeredIf = ::`White can promote pawn`, targetState = `White promote pawn`) {}
-            transition(triggeredIf = ::`Black is checkmate`, targetState = `White victory`) {}
+            transition(triggeredIf = ::`Black is checkmate`, targetState = `White victory`) {
+                effectCreateEvent(::`Update Users Ratings`)
+            }
             transition(triggeredIf = ::`Automatic draw`, targetState = Draw) {}
             transition(triggeredByEvent = proposeDraw, targetState = `Black has proposed draw`) {}
             transition(triggeredByEvent = resign, targetState = `White victory`) {
