@@ -7,7 +7,7 @@ import kotlinx.serialization.json.Json
 const val createGame = "CreateGame"
 const val makeMove = "MakeMove"
 const val createUser = "CreateUser"
-const val selectPiece = "SelectPiece"
+const val promotePawn = "PromotePawn"
 const val resign = "Resign"
 const val proposeDraw = "ProposeDraw"
 const val acceptDraw = "AcceptDraw"
@@ -57,7 +57,7 @@ class CreateUser(userId: String, params: String, userIdentityId: String) : Event
 
 class PromotePawn(gameId: String, params: String, userIdentityId: String) : Event(
     schemaVersion = 1,
-    name = selectPiece,
+    name = promotePawn,
     modelId = gameId,
     params = params,
     userIdentityId = userIdentityId

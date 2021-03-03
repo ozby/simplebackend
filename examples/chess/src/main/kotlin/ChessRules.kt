@@ -239,14 +239,20 @@ private fun validMovesForPawn(board: Board, x: Int, y: Int, color: Color): Set<P
         return emptySet()
     }
     if (board.getPieceAt(x, y + deltaY) == null) {
-        validMoves.add(Pair(from, Board.getSquareName(x, y + deltaY)))
+        validMoves.add(Pair(from, Board.getSquareName(x, y + deltaY)))  // one step forward
+    }
+    if ((color == white && y == 1) || (color == black && y == 6) &&
+        board.getPieceAt(x, y + deltaY) == null &&
+        board.getPieceAt(x, y + deltaY + deltaY) == null
+    ) {
+        validMoves.add(Pair(from, Board.getSquareName(x, y + deltaY + deltaY))) // two steps forward
     }
     val pieceForwardRight = board.getPieceAt(x + 1, y + deltaY)
     if (x < 7 && pieceForwardRight != null && pieceForwardRight.second != color) {
         validMoves.add(Pair(from, Board.getSquareName(x + 1, y + deltaY)))
     }
     val pieceForwardLeft = board.getPieceAt(x - 1, y + deltaY)
-    if (x > 1 && pieceForwardLeft != null && pieceForwardLeft.second != color) {
+    if (x > 0 && pieceForwardLeft != null && pieceForwardLeft.second != color) {
         validMoves.add(Pair(from, Board.getSquareName(x - 1, y + deltaY)))
     }
     // TODO: en passant

@@ -21,9 +21,9 @@ import declineDraw
 import makeMove
 import makeTurn
 import newGame
+import promotePawn
 import proposeDraw
 import resign
-import selectPiece
 import statemachines.GameState.*
 import switchPawn
 
@@ -82,7 +82,7 @@ fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
         }
 
         state(`White promote pawn`) {
-            transition(triggeredByEvent = selectPiece, targetState = `Black turn`) {
+            transition(triggeredByEvent = promotePawn, targetState = `Black turn`) {
                 guard(::`Event comes from white player`)
                 guard(::`Is promotable piece`)
                 effectUpdateModel(::switchPawn)
@@ -90,7 +90,7 @@ fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
         }
 
         state(`Black promote pawn`) {
-            transition(triggeredByEvent = selectPiece, targetState = `White turn`) {
+            transition(triggeredByEvent = promotePawn, targetState = `White turn`) {
                 guard(::`Event comes from black player`)
                 guard(::`Is promotable piece`)
                 effectUpdateModel(::switchPawn)

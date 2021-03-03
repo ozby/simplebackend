@@ -13,7 +13,7 @@ fun parseEvent(eventName: String, modelId: String, params: String, userIdentityI
         createGame -> CreateGame(modelId, params, userIdentityId)
         makeMove -> MakeMove(modelId, params, userIdentityId)
         createUser -> CreateUser(modelId, params, userIdentityId)
-        selectPiece -> PromotePawn(modelId, params, userIdentityId)
+        promotePawn -> PromotePawn(modelId, params, userIdentityId)
         resign -> Resign(modelId, params, userIdentityId)
         proposeDraw -> ProposeDraw(modelId, params, userIdentityId)
         acceptDraw -> AcceptDraw(modelId, params, userIdentityId)
