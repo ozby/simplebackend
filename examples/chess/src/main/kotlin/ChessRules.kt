@@ -164,7 +164,7 @@ private fun willMoveLeaveKingChecked(piecesBeforeMove: List<String>, state: Game
     return if (state == `White turn`) isWhiteCheck(piecesAfterMove, gameId) else isBlackCheck(piecesAfterMove, gameId)
 }
 
-private fun piecesAfterMove(piecesBefore: List<String>, from: String, to: String): List<String> {
+fun piecesAfterMove(piecesBefore: List<String>, from: String, to: String): List<String> {
     val piecesAfter = piecesBefore.toMutableList()
     piecesAfter[squareToIndex(to)] = piecesBefore[squareToIndex(from)]
     piecesAfter[squareToIndex(from)] = ""

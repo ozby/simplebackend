@@ -41,10 +41,22 @@ private fun calculateMove(model: Model<GameProperties>) {
     }
 
     val validMoves = calculateAllValidMoves(model.properties.pieces, valueOf(model.state), gameId = model.id)
-    val selectedMove = validMoves.random(rnd)
+    val scoredMoves = validMoves.map {
+        val result = piecesAfterMove(model.properties.pieces, it.first, it.second)
+        Pair(it, calculateScore(result))
+    }
+
+    val maxScore = scoredMoves.maxByOrNull { it.second }?.second ?: throw Exception()
+    val selectedMove = scoredMoves.filter { it.second == maxScore }.random(rnd).first
     val params = """{"from": "${selectedMove.first}", "to": "${selectedMove.second}"}"""
     val event = MakeMove(gameId = model.id, params = params, userIdentityId = computerPlayer)
     SimpleBackend.processEvent(event, eventParametersJson = params, userIdentity = UserIdentity(computerPlayer))
+}
+
+fun calculateScore(pieces: List<String>): Int {
+    val blackPieces = pieces.count { it.startsWith("b") }
+    val whitePieces = pieces.count { it.startsWith("w") }
+    return blackPieces - whitePieces
 }
 
 private fun whiteIsAhead(model: Model<GameProperties>): Boolean {
