@@ -36,7 +36,9 @@ fun userStateMachine(): StateMachine<UserProperties, Event, UserStates> =
         }
 
         state(active) {
-            enterAction(::sendWelcomeEmail)
+            onEnter {
+                action(::sendWelcomeEmail)
+            }
             transition(triggeredByEvent = deleteUser, targetState = UserStates.deleted) {
                 // effectDeleteModel()
             }

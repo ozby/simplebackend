@@ -2,6 +2,7 @@ package com.prettybyte.simplebackend.lib.statemachine;
 
 import arrow.core.Either
 import arrow.core.Right
+import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.*
 import kotlin.reflect.KClass
 
@@ -40,37 +41,73 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         return result
     }
 
-    internal fun eventOccurred(event: E, isDryRun: Boolean, performActions: Boolean, view: IModelView<*>): Either<Problem, Model<T>?> {
-        view as IModelView<T>
-        // assert(event.model != null || event.name == initialState)
+    internal fun eventOccurred(event: E, preventModelUpdates: Boolean, performActions: Boolean): Either<Problem, Model<T>?> {
+        val updatedModels = mutableListOf<Model<T>>()
+        val secondaryEvents = mutableListOf<E>()
 
         val modelId = event.modelId
-        val model: Model<T>? = if (modelId == null) null else view.getWithoutAuthorization(modelId)
+        val model: Model<T>? = if (modelId == null) null else modelView.getWithoutAuthorization(modelId)
 
         currentState = if (model == null) initialState else getStateByName(model.state)
         val transition = currentState.getTransitionForEvent(event) ?: throw RuntimeException("eventOccurred")
         transition.currentState = currentState
 
-        val newState = transition.enterTransition(isDryRun) { getStateByName(it.name) }
+        val exitBlockResult = executeBlock(currentState.exitBlock, event, model, performActions = performActions, preventModelUpdates = preventModelUpdates)
+        updatedModels.addAll(exitBlockResult.first)
+        secondaryEvents.addAll(exitBlockResult.second)
 
-        currentState.exitState(!isDryRun && performActions, model, event)
-        var updatedModel = transition.executeEffect(model, event.getParams(), newState, event, view, isDryRun)
+        val newState = transition.enterTransition(preventModelUpdates) { getStateByName(it.name) }
+        var updatedModel = transition.executeEffect(model, event.getParams(), newState, event, modelView, preventModelUpdates)
 
-        newState.enterState(!isDryRun && performActions, model, event)
+        updatedModel = updatedModel.copy(state = newState.name)
+        if (!preventModelUpdates) {
+            modelView.update(updatedModel)
+        }
+
+        val enterBlockResult = executeBlock(newState.enterBlock, event, updatedModel, performActions, preventModelUpdates)
+        updatedModels.addAll(enterBlockResult.first)
+        secondaryEvents.addAll(enterBlockResult.second)
 
         // Is there any transition that triggers automatically?
         val autoTransition = newState.transitions.filter { it.triggeredIf != null && it.triggeredIf.invoke(updatedModel) }.firstOrNull()
-        if (autoTransition != null) {   // TODO: must allow any number of automatic transitions
+        if (autoTransition != null) {   // TODO: must allow any number of automatic transitions. Recursion?
             autoTransition.currentState = newState
-            val newerState = autoTransition.enterTransition(isDryRun) { getStateByName(it.name) }
-            newState.exitState(performActions, model, event)
-            updatedModel = autoTransition.executeEffect(updatedModel, event.getParams(), newerState, event, view, isDryRun)
-            newerState.enterState(!isDryRun && performActions, model, event)
+            val newerState = autoTransition.enterTransition(preventModelUpdates) { getStateByName(it.name) }
+            executeBlock(newState.exitBlock, event, model, performActions, preventModelUpdates)
+            updatedModel = autoTransition.executeEffect(updatedModel, event.getParams(), newerState, event, modelView, preventModelUpdates)
 
-            // TODO:   Tror det är bäst att State och Transition endast ska hålla data och flytta all logik till denna klassen.Svårt att få översikt annars.
+            if (performActions) {
+                newerState.enterBlock.actions.forEach { it(model, event) }
+            }
+
         }
 
+        secondaryEvents.forEach { SimpleBackend.processEvent(it, it.params, UserIdentity.system()) }
+
         return Right(updatedModel)
+    }
+
+    private fun executeBlock(
+        block: Block<T, E>,
+        event: E,
+        model: Model<T>?,
+        performActions: Boolean,
+        preventModelUpdates: Boolean
+    ): Pair<List<Model<T>>, List<E>> {
+        if (performActions) {
+            block.actions.forEach { it(model, event) }
+        }
+        block.effectCreateModelFunctions.forEach { it(event.getParams()) }
+        var updatedModels: List<Model<T>> = emptyList()
+        if (model != null) {
+            updatedModels =
+                block.effectUpdateModelFunctions.map { model.copy(properties = it(model, event.getParams())) }
+            if (!preventModelUpdates) {
+                updatedModels.forEach { modelView.update(it) }
+            }
+        }
+        val newEvents = block.effectCreateEventFunctions.map { it(model) }
+        return Pair(updatedModels, newEvents)
     }
 
     internal fun canHandle(event: IEvent): Boolean {

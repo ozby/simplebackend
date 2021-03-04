@@ -71,9 +71,7 @@ fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
                 effectUpdateModel(::makeTurn)
             }
             transition(triggeredIf = ::`White can promote pawn`, targetState = `White promote pawn`) {}
-            transition(triggeredIf = ::`Black is checkmate`, targetState = `White victory`) {
-                effectCreateEvent(::`Update Users Ratings`)
-            }
+            transition(triggeredIf = ::`Black is checkmate`, targetState = `White victory`) {}
             transition(triggeredIf = ::`Automatic draw`, targetState = Draw) {}
             transition(triggeredByEvent = proposeDraw, targetState = `Black has proposed draw`) {}
             transition(triggeredByEvent = resign, targetState = `White victory`) {
@@ -97,11 +95,23 @@ fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
             }
         }
 
-        state(`White victory`) {}
+        state(`White victory`) {
+            onEnter {
+                effectCreateEvent(::`Update Users Ratings`)
+            }
+        }
 
-        state(`Black victory`) {}
+        state(`Black victory`) {
+            onEnter {
+                effectCreateEvent(::`Update Users Ratings`)
+            }
+        }
 
-        state(Draw) {}
+        state(Draw) {
+            onEnter {
+                effectCreateEvent(::`Update Users Ratings`)
+            }
+        }
 
         state(`White has proposed draw`) {
             transition(triggeredByEvent = acceptDraw, targetState = Draw) {
@@ -115,7 +125,6 @@ fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
         state(`Black has proposed draw`) {
             transition(triggeredByEvent = acceptDraw, targetState = Draw) {
                 guard(::`Event comes from white player`)
-                effectCreateEvent(::`Update Users Ratings`)
             }
             transition(triggeredByEvent = declineDraw, targetState = `Black turn`) {
                 guard(::`Event comes from white player`)

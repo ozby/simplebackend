@@ -5,6 +5,8 @@ import com.prettybyte.simplebackend.lib.AllowAll
 import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
+import statemachines.GameState
+import statemachines.GameState.*
 import statemachines.UserStates
 import views.UserView
 
@@ -45,8 +47,13 @@ fun `Can only create game where I am a player`(model: Model<GameProperties>?, ev
     return null
 }
 
-fun `Update Users Ratings`(model: Model<GameProperties>): Event {
-    val params = """{"result": "draw"}"""
+fun `Update Users Ratings`(model: Model<GameProperties>?): Event {
+    val params = when (GameState.valueOf(model?.state ?: throw Exception())) {
+        `White victory` -> """{"result": "victory"}"""
+        `Black victory` -> """{"result": "defeat"}"""
+        Draw -> """{"result": "draw"}"""
+        else -> throw Exception()
+    }
     return UpdateUsersRating(userId = model.properties.whitePlayerId, params = params, UserIdentity.system().id)
 }
 

@@ -161,7 +161,7 @@ class EventService<E : IEvent>(
                 eventStore.store(event, eventParametersJson)    // TODO: ugly!
             }
 
-            val eventResult = stateMachine.eventOccurred(event, isDryRun = dryRun, performActions = performActions, modelView)
+            val eventResult = stateMachine.eventOccurred(event, preventModelUpdates = dryRun, performActions = performActions)
             when (eventResult) {
                 is Left -> return eventResult
                 is Right -> {
