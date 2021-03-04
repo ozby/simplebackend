@@ -53,7 +53,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
 
         val newState = transition.enterTransition(isDryRun) { getStateByName(it.name) }
 
-        currentState.exitState(performActions, model, event)
+        currentState.exitState(!isDryRun && performActions, model, event)
         var updatedModel = transition.executeEffect(model, event.getParams(), newState, event, view, isDryRun)
 
         newState.enterState(!isDryRun && performActions, model, event)
@@ -68,8 +68,6 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
             newerState.enterState(!isDryRun && performActions, model, event)
 
             // TODO:   Tror det är bäst att State och Transition endast ska hålla data och flytta all logik till denna klassen.Svårt att få översikt annars.
-
-
         }
 
         return Right(updatedModel)

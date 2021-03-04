@@ -18,7 +18,7 @@ fun main() {
     gameStateMachine.onStateChange { makeComputerMove(it) }
 
     SimpleBackend.setup(
-        databaseConnection = DatabaseConnection(url = "jdbc:sqlite:/home/linus/temp/autoserverChess.db", driver = "org.sqlite.JDBC"),
+        databaseConnection = DatabaseConnection(url = "jdbc:sqlite:/home/linus/temp/simpleserverChess.db", driver = "org.sqlite.JDBC"),
         migrations = Migrations,
         eventParser = ::parseEvent,
         eventAuthorizer = EventAuthorizer,

@@ -125,6 +125,7 @@ internal class SimpleBackendWrapped<E : IEvent>(
                 withGuards = true,
                 eventOptions = EventOptions(dryRun = false),
                 userIdentity = userIdentity,
+                performActions = true,
             )
         }
     }

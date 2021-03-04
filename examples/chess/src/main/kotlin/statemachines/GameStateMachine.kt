@@ -115,6 +115,7 @@ fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
         state(`Black has proposed draw`) {
             transition(triggeredByEvent = acceptDraw, targetState = Draw) {
                 guard(::`Event comes from white player`)
+                effectCreateEvent(::`Update Users Ratings`)
             }
             transition(triggeredByEvent = declineDraw, targetState = `Black turn`) {
                 guard(::`Event comes from white player`)

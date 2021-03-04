@@ -18,6 +18,7 @@ fun parseEvent(eventName: String, modelId: String, params: String, userIdentityI
         proposeDraw -> ProposeDraw(modelId, params, userIdentityId)
         acceptDraw -> AcceptDraw(modelId, params, userIdentityId)
         declineDraw -> DeclineDraw(modelId, params, userIdentityId)
+        updateUsersRating -> UpdateUsersRating(modelId, params, userIdentityId)
         else -> throw RuntimeException("Could not parse event with name '$eventName'")
     }
 }
@@ -45,10 +46,9 @@ fun `Can only create game where I am a player`(model: Model<GameProperties>?, ev
 }
 
 fun `Update Users Ratings`(model: Model<GameProperties>): Event {
-    val params = """{"draw": true}"""
+    val params = """{"result": "draw"}"""
     return UpdateUsersRating(userId = model.properties.whitePlayerId, params = params, UserIdentity.system().id)
 }
-
 
 const val computerPlayer = "Computer player"
 
@@ -104,8 +104,6 @@ class Board(val pieces: List<String>) {
                 "n" -> knight
                 else -> throw RuntimeException()
             }
-
-
         }
     }
 }

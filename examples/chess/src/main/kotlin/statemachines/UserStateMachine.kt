@@ -4,6 +4,7 @@ import CreateUserParams
 import Event
 import EventAuthorizer.Roles.player
 import EventAuthorizer.Roles.viewer
+import UpdateUsersRatingParams
 import UserProperties
 import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.EventParams
@@ -13,6 +14,7 @@ import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import com.prettybyte.simplebackend.lib.statemachine.stateMachine
 import statemachines.UserStates.active
 import systemUserIdentity
+import updateUsersRating
 import views.UserView
 
 const val createUser = "CreateUser"
@@ -38,9 +40,22 @@ fun userStateMachine(): StateMachine<UserProperties, Event, UserStates> =
             transition(triggeredByEvent = deleteUser, targetState = UserStates.deleted) {
                 // effectDeleteModel()
             }
+            transition(triggeredByEvent = updateUsersRating, targetState = active) {
+                effectUpdateModel(::updateRating)
+            }
         }
 
     }
+
+fun updateRating(model: Model<UserProperties>, eventParams: EventParams): UserProperties {
+    eventParams as UpdateUsersRatingParams
+    return when (eventParams.result) {
+        "victory" -> model.properties.copy(victories = model.properties.victories + 1)
+        "defeat" -> model.properties.copy(defeats = model.properties.defeats + 1)
+        "draw" -> model.properties.copy(draws = model.properties.draws + 1)
+        else -> throw Exception()
+    }
+}
 
 fun userNotAlreadyCreated(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
     if (UserView.getWithoutAuthorization(userIdentity) != null) {
@@ -65,7 +80,10 @@ fun newUser(eventParams: EventParams): UserProperties {
         userIdentityId = eventParams.userIdentityId,
         firstName = eventParams.firstName,
         lastName = eventParams.lastName,
-        roles = setOf(viewer, player)
+        roles = setOf(viewer, player),
+        victories = 0,
+        defeats = 0,
+        draws = 0,
     )
 }
 

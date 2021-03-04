@@ -14,4 +14,7 @@ data class UserProperties(
     val roles: Set<EventAuthorizer.Roles>,
     val firstName: String,
     val lastName: String,
+    val victories: Int,
+    val defeats: Int,
+    val draws: Int,
 ) : ModelProperties()

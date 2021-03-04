@@ -37,7 +37,7 @@ class EventMutationService<E : IEvent>(
             if (!eventAuthorizer.isAllowedToCreateEvent(userIdentity, event)) {
                 DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "Permission denied")).build()
             }
-            return when (val result = eventService.process(event, eventOptions, eventParametersJson, userIdentity = userIdentity)) {
+            return when (val result = eventService.process(event, eventOptions, eventParametersJson, userIdentity = userIdentity, performActions = true)) {
                 is Left -> DataFetcherResult.newResult<CreateEventResponse>().error(result.a).build()
                 is Right -> DataFetcherResult.newResult<CreateEventResponse>().data(
                     CreateEventResponse(

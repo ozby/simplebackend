@@ -12,6 +12,7 @@ const val resign = "Resign"
 const val proposeDraw = "ProposeDraw"
 const val acceptDraw = "AcceptDraw"
 const val declineDraw = "DeclineDraw"
+const val updateUsersRating = "UpdateUsersRating"
 
 sealed class Event(
     override val schemaVersion: Int,
@@ -112,7 +113,7 @@ class DeclineDraw(gameId: String, params: String, userIdentityId: String) : Even
 
 class UpdateUsersRating(userId: String, params: String, userIdentityId: String) : Event(
     schemaVersion = 1,
-    name = proposeDraw,
+    name = updateUsersRating,
     modelId = userId,
     params = params,
     userIdentityId = userIdentityId
@@ -145,4 +146,4 @@ data class AcceptDrawParams(val test: String) : EventParams()
 data class DeclineDrawParams(val test: String) : EventParams()
 
 @Serializable
-data class UpdateUsersRatingParams(val test: String) : EventParams()
+data class UpdateUsersRatingParams(val result: String) : EventParams()

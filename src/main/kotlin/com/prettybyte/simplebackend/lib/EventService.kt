@@ -133,7 +133,7 @@ class EventService<E : IEvent>(
         eventOptions: EventOptions,
         eventParametersJson: String = "",
         storeEvent: Boolean = true,
-        performActions: Boolean = true,
+        performActions: Boolean,
         userIdentity: UserIdentity,
         withGuards: Boolean = true,
         notifyListeners: Boolean = true,
@@ -188,3 +188,5 @@ class EventService<E : IEvent>(
 }
 
 data class EventOptions(val dryRun: Boolean)
+
+// TODO: should actions be performed when the target state is the same as the original state?
