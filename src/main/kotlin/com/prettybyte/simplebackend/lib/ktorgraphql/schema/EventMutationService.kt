@@ -10,7 +10,7 @@ import graphql.execution.DataFetcherResult
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-data class CreateEventResponse(val blockedByGuards: List<String>, val dryRun: Boolean, val model: String?)
+data class CreateEventResponse(val blockedByGuards: List<String>, val dryRun: Boolean, val modifiedModels: List<String>)
 
 class EventMutationService<E : IEvent>(
     private val eventService: EventService<E>,
@@ -33,17 +33,22 @@ class EventMutationService<E : IEvent>(
             val userIdentity = context.userIdentity
             val event = eventParser(eventName, modelId, eventParametersJson, userIdentity.id)
             validateParams(event)
-            val eventOptions = EventOptions(dryRun = dryRun)
             if (!eventAuthorizer.isAllowedToCreateEvent(userIdentity, event)) {
                 DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "Permission denied")).build()
             }
-            return when (val result = eventService.process(event, eventOptions, eventParametersJson, userIdentity = userIdentity, performActions = true)) {
+            return when (val result = eventService.process(
+                event,
+                eventParametersJson,
+                performActions = true,
+                userIdentity = userIdentity,
+                preventModelUpdates = dryRun,
+            )) {
                 is Left -> DataFetcherResult.newResult<CreateEventResponse>().error(result.a).build()
                 is Right -> DataFetcherResult.newResult<CreateEventResponse>().data(
                     CreateEventResponse(
                         blockedByGuards = emptyList(),
                         dryRun = dryRun,
-                        model = json.encodeToString(result.b)
+                        modifiedModels = result.b.map { json.encodeToString(it) }
                     )
                 ).build()
             }

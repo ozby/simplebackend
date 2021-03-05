@@ -36,12 +36,11 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
     }
 
     private fun getStateByName(name: String): State<T, E, ModelStates> {
-        val result = states.firstOrNull { it.name == name }
+        return states.firstOrNull { it.name == name }
             ?: throw NoSuchElementException(name)
-        return result
     }
 
-    internal fun eventOccurred(event: E, preventModelUpdates: Boolean, performActions: Boolean): Either<Problem, Model<T>?> {
+    internal fun eventOccurred(event: E, preventModelUpdates: Boolean, performActions: Boolean): Either<Problem, List<Model<T>>> {
         val updatedModels = mutableListOf<Model<T>>()
         val secondaryEvents = mutableListOf<E>()
 
@@ -49,7 +48,42 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         val model: Model<T>? = if (modelId == null) null else modelView.getWithoutAuthorization(modelId)
 
         currentState = if (model == null) initialState else getStateByName(model.state)
-        val transition = currentState.getTransitionForEvent(event) ?: throw RuntimeException("eventOccurred")
+        val transition = currentState.getTransitionForEvent(event)
+        if (transition != null) {
+            val transitionResult = executeTransition(transition, event, model, performActions = performActions, preventModelUpdates = preventModelUpdates)
+            updatedModels.addAll(transitionResult.first)
+            secondaryEvents.addAll(transitionResult.second)
+        }
+
+        val onEventBlock = currentState.onEventBlocks.firstOrNull { it.first == event.name }
+        if (onEventBlock != null) {
+            val eventBlockResult = executeBlock(onEventBlock.second, event, model, performActions = performActions, preventModelUpdates = preventModelUpdates)
+            updatedModels.addAll(eventBlockResult.first)
+            secondaryEvents.addAll(eventBlockResult.second)
+        }
+
+        secondaryEvents.forEach {
+            SimpleBackend.processEvent(
+                it,
+                it.params,
+                UserIdentity.system(),
+                performActions = performActions,
+                preventModelUpdates = preventModelUpdates,
+                storeEvent = false
+            )
+        }
+        return Right(updatedModels)
+    }
+
+    private fun executeTransition(
+        transition: Transition<T, E, ModelStates>,
+        event: E,
+        model: Model<T>?,
+        performActions: Boolean,
+        preventModelUpdates: Boolean
+    ): Pair<List<Model<T>>, List<E>> {
+        val updatedModels = mutableListOf<Model<T>>()
+        val secondaryEvents = mutableListOf<E>()
         transition.currentState = currentState
 
         val exitBlockResult = executeBlock(currentState.exitBlock, event, model, performActions = performActions, preventModelUpdates = preventModelUpdates)
@@ -57,12 +91,21 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         secondaryEvents.addAll(exitBlockResult.second)
 
         val newState = transition.enterTransition(preventModelUpdates) { getStateByName(it.name) }
-        var updatedModel = transition.executeEffect(model, event.getParams(), newState, event, modelView, preventModelUpdates)
+        var updatedModel = transition.executeEffect(
+            model,
+            event.getParams(),
+            newState,
+            event,
+            modelView,
+            preventModelUpdates = preventModelUpdates,
+            performActions = performActions
+        )
 
         updatedModel = updatedModel.copy(state = newState.name)
         if (!preventModelUpdates) {
             modelView.update(updatedModel)
         }
+        updatedModels.add(updatedModel)
 
         val enterBlockResult = executeBlock(newState.enterBlock, event, updatedModel, performActions, preventModelUpdates)
         updatedModels.addAll(enterBlockResult.first)
@@ -74,17 +117,22 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
             autoTransition.currentState = newState
             val newerState = autoTransition.enterTransition(preventModelUpdates) { getStateByName(it.name) }
             executeBlock(newState.exitBlock, event, model, performActions, preventModelUpdates)
-            updatedModel = autoTransition.executeEffect(updatedModel, event.getParams(), newerState, event, modelView, preventModelUpdates)
+            updatedModel = autoTransition.executeEffect(
+                updatedModel,
+                event.getParams(),
+                newerState,
+                event,
+                modelView,
+                preventModelUpdates = preventModelUpdates,
+                performActions = performActions,
+            )
 
             if (performActions) {
                 newerState.enterBlock.actions.forEach { it(model, event) }
             }
 
         }
-
-        secondaryEvents.forEach { SimpleBackend.processEvent(it, it.params, UserIdentity.system()) }
-
-        return Right(updatedModel)
+        return Pair(updatedModels, secondaryEvents)
     }
 
     private fun executeBlock(
@@ -111,7 +159,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
     }
 
     internal fun canHandle(event: IEvent): Boolean {
-        return getAllStates().any { it.getTransitionForEvent(event) != null }
+        return getAllStates().any { it.getTransitionForEvent(event) != null || it.onEventBlocks.any { it.first == event.name } }
     }
 
     internal fun transitionExists(event: IEvent, view: IModelView<out ModelProperties>): Boolean {
@@ -124,13 +172,19 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         return if (transition == null) false else true
     }
 
-    internal fun preventedByGuards(event: E, userIdentity: UserIdentity, view: IModelView<*>): List<BlockedByGuard> {
-        view as IModelView<T>
+    internal fun preventedByGuards(event: E, userIdentity: UserIdentity): List<BlockedByGuard> {
         val modelId = event.modelId
-        val model: Model<T>? = if (modelId == null) null else view.getWithoutAuthorization(modelId)
+        val model: Model<T>? = if (modelId == null) null else modelView.getWithoutAuthorization(modelId)
         currentState = if (model == null) initialState else getStateByName(model.state)
-        val transition = currentState.getTransitionForEvent(event) ?: throw RuntimeException("eventOccurred")
-        return transition.verifyGuard(event, model, userIdentity)
+        val transition = currentState.getTransitionForEvent(event)
+        if (transition != null) {
+            return transition.verifyGuard(event, model, userIdentity)
+        }
+        val onEventBlock = currentState.onEventBlocks.firstOrNull { it.first == event.name }
+        if (onEventBlock != null) {
+            return onEventBlock.second.guardFunctions.mapNotNull { it(model, event, userIdentity) }
+        }
+        return emptyList()
     }
 
     private fun getAllStates(): Set<State<T, E, ModelStates>> {

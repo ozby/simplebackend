@@ -20,13 +20,27 @@ suspend fun makeComputerMove(model: Model<GameProperties>) {
 private fun declineDraw(model: Model<GameProperties>) {
     val params = """{"test": ""}"""
     val event = DeclineDraw(gameId = model.id, params = params, userIdentityId = computerPlayer)
-    SimpleBackend.processEvent(event, eventParametersJson = params, userIdentity = UserIdentity(computerPlayer))
+    SimpleBackend.processEvent(
+        event,
+        eventParametersJson = params,
+        userIdentity = UserIdentity(computerPlayer),
+        performActions = true,
+        preventModelUpdates = false,
+        storeEvent = true
+    )
 }
 
 private fun promotePawn(model: Model<GameProperties>) {
     val params = """{"piece": "q"}"""
     val event = PromotePawn(gameId = model.id, params = params, userIdentityId = computerPlayer)
-    SimpleBackend.processEvent(event, eventParametersJson = params, userIdentity = UserIdentity(computerPlayer))
+    SimpleBackend.processEvent(
+        event,
+        eventParametersJson = params,
+        userIdentity = UserIdentity(computerPlayer),
+        performActions = true,
+        preventModelUpdates = false,
+        storeEvent = true
+    )
 }
 
 private fun calculateMove(model: Model<GameProperties>) {
@@ -36,7 +50,14 @@ private fun calculateMove(model: Model<GameProperties>) {
     ) {
         val params = """{"test": ""}"""
         val event = ProposeDraw(gameId = model.id, params = params, userIdentityId = computerPlayer)
-        SimpleBackend.processEvent(event, eventParametersJson = params, userIdentity = UserIdentity(computerPlayer))
+        SimpleBackend.processEvent(
+            event,
+            eventParametersJson = params,
+            userIdentity = UserIdentity(computerPlayer),
+            performActions = true,
+            preventModelUpdates = false,
+            storeEvent = true
+        )
         return
     }
 
@@ -50,7 +71,14 @@ private fun calculateMove(model: Model<GameProperties>) {
     val selectedMove = scoredMoves.filter { it.second == maxScore }.random(rnd).first
     val params = """{"from": "${selectedMove.first}", "to": "${selectedMove.second}"}"""
     val event = MakeMove(gameId = model.id, params = params, userIdentityId = computerPlayer)
-    SimpleBackend.processEvent(event, eventParametersJson = params, userIdentity = UserIdentity(computerPlayer))
+    SimpleBackend.processEvent(
+        event,
+        eventParametersJson = params,
+        userIdentity = UserIdentity(computerPlayer),
+        performActions = true,
+        preventModelUpdates = false,
+        storeEvent = true
+    )
 }
 
 fun calculateScore(pieces: List<String>): Int {

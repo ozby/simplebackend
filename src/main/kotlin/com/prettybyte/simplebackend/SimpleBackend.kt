@@ -117,15 +117,23 @@ internal class SimpleBackendWrapped<E : IEvent>(
         //grpcServer.shutdown()
     }
 
-    fun processEvent(event: E, eventParametersJson: String, userIdentity: UserIdentity) {
+    fun processEvent(
+        event: E,
+        eventParametersJson: String,
+        userIdentity: UserIdentity,
+        performActions: Boolean,
+        preventModelUpdates: Boolean,
+        storeEvent: Boolean
+    ) {
         GlobalScope.launch {
             eventService.process(
                 event = event,
                 eventParametersJson = eventParametersJson,
                 withGuards = true,
-                eventOptions = EventOptions(dryRun = false),
                 userIdentity = userIdentity,
-                performActions = true,
+                performActions = performActions,
+                preventModelUpdates = preventModelUpdates,
+                storeEvent = storeEvent,
             )
         }
     }
@@ -186,8 +194,22 @@ object SimpleBackend {
         )
     }
 
-    fun <E : IEvent> processEvent(event: E, eventParametersJson: String, userIdentity: UserIdentity) {
-        return (sb as SimpleBackendWrapped<E>).processEvent(event, eventParametersJson, userIdentity)
+    fun <E : IEvent> processEvent(
+        event: E,
+        eventParametersJson: String,
+        userIdentity: UserIdentity,
+        performActions: Boolean,
+        preventModelUpdates: Boolean,
+        storeEvent: Boolean
+    ) {
+        return (sb as SimpleBackendWrapped<E>).processEvent(
+            event,
+            eventParametersJson,
+            userIdentity,
+            performActions = performActions,
+            preventModelUpdates = preventModelUpdates,
+            storeEvent = storeEvent
+        )
     }
 
     fun <E : IEvent> getEventsForModelId(id: String): List<E> = (sb as SimpleBackendWrapped<E>).getEventsForModelId(id)

@@ -9,6 +9,7 @@ class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: St
     internal var enterBlock: Block<T, E> = Block()
     internal var exitBlock: Block<T, E> = Block()
     internal val transitions = mutableListOf<Transition<T, E, ModelStates>>()
+    internal val onEventBlocks = mutableListOf<Pair<String, BlockWithGuards<T, E>>>()
 
     fun onEnter(init: Block<T, E>.() -> Unit) {
         enterBlock = Block<T, E>()
@@ -18,6 +19,12 @@ class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: St
     fun onExit(init: Block<T, E>.() -> Unit) {
         exitBlock = Block<T, E>()
         exitBlock.init()
+    }
+
+    fun onEvent(event: String, init: BlockWithGuards<T, E>.() -> Unit) {
+        val onEventBlock = BlockWithGuards<T, E>()
+        onEventBlock.init()
+        onEventBlocks.add(Pair(event, onEventBlock))
     }
 
     fun transition(

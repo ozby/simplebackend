@@ -1,11 +1,8 @@
 package com.prettybyte.simplebackend.lib.statemachine
 
-import com.prettybyte.simplebackend.lib.EventParams
-import com.prettybyte.simplebackend.lib.IEvent
-import com.prettybyte.simplebackend.lib.Model
-import com.prettybyte.simplebackend.lib.ModelProperties
+import com.prettybyte.simplebackend.lib.*
 
-class Block<T : ModelProperties, E : IEvent> {
+open class Block<T : ModelProperties, E : IEvent> {
 
     internal val effectCreateModelFunctions = mutableListOf<(EventParams) -> T>()
     internal val effectUpdateModelFunctions = mutableListOf<((Model<T>, EventParams) -> T)>()
@@ -31,6 +28,16 @@ class Block<T : ModelProperties, E : IEvent> {
               // TODO
          */
         actions.add(f)
+    }
+
+}
+
+class BlockWithGuards<T : ModelProperties, E : IEvent> : Block<T, E>() {
+
+    internal val guardFunctions: MutableList<(Model<T>?, E, UserIdentity) -> BlockedByGuard?> = mutableListOf()
+
+    fun guard(guard: (Model<T>?, E, UserIdentity) -> BlockedByGuard?) {
+        guardFunctions.add(guard)
     }
 
 }

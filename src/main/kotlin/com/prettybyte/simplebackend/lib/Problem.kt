@@ -20,10 +20,10 @@ class Problem(private val status: Status, private val errorMessage: String = "")
         fun unknownModelType(type: String): Problem =
             Problem(Status.INVALID_ARGUMENT, "Unknown model type '$type'")
 
-        fun noTransitionAvailableForEvent(eventName: String): Problem =
+        fun noCannotHandleEvent(eventName: String): Problem =
             Problem(
                 Status.INVALID_ARGUMENT,
-                "The model is not in a state where there is a transition that can be triggered by '$eventName'"
+                "The model is not in a state where it can handle event '$eventName'"
             )
 
         fun preventedByGuard(failedGuards: List<BlockedByGuard>): Problem =

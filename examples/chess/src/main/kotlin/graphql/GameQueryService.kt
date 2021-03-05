@@ -49,8 +49,6 @@ class Game(private val model: Model<GameProperties>) {
             is Right -> transitions.b
         }
     }
-
-
 }
 
 class StateMachineDescriptionGraphQL(private val smd: StateMachineDescription) {

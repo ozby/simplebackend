@@ -59,8 +59,6 @@ fun `Update Users Ratings`(model: Model<GameProperties>?): Event {
 
 const val computerPlayer = "Computer player"
 
-val systemUserIdentity = UserIdentity("perhaps a secret system user")
-
 class Board(val pieces: List<String>) {
 
     fun getPieceAt(x: Int, y: Int): Pair<Piece, Color>? {

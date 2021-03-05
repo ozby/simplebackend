@@ -60,10 +60,10 @@ class EventService<E : IEvent>(
                 event,
                 storeEvent = false,
                 performActions = false,
+                userIdentity = UserIdentity.system(),
                 withGuards = false,
                 notifyListeners = false,
-                eventOptions = EventOptions(dryRun = false),
-                userIdentity = UserIdentity.system()
+                preventModelUpdates = false
             )) {
                 is Left -> throw RuntimeException(result.a.toString())
             }
@@ -130,54 +130,56 @@ class EventService<E : IEvent>(
 
     suspend fun process(
         event: E,
-        eventOptions: EventOptions,
         eventParametersJson: String = "",
         storeEvent: Boolean = true,
         performActions: Boolean,
         userIdentity: UserIdentity,
         withGuards: Boolean = true,
         notifyListeners: Boolean = true,
-    ): Either<Problem, Model<out ModelProperties>?> {
+        preventModelUpdates: Boolean,
+    ): Either<Problem, List<Model<out ModelProperties>>> {
         mutex.withLock {
             val stateMachine = stateMachineProvider(event)  // one event may trigger many state machines ??
-
-            val modelView = stateMachine.modelView
-            if (!stateMachine.transitionExists(event, modelView)) {
-                return Left(Problem.noTransitionAvailableForEvent(event.name))
+            if (!stateMachine.canHandle(event)) {
+                return Left(Problem.noCannotHandleEvent(event.name))
             }
 
             if (withGuards) {
                 if (userIdentity == null) {
                     throw RuntimeException()
                 }
-                val failedGuards = stateMachine.preventedByGuards(event, userIdentity, modelView)
+                val failedGuards = stateMachine.preventedByGuards(event, userIdentity)
                 if (failedGuards.isNotEmpty()) {
                     return Left(Problem.preventedByGuard(failedGuards))
                 }
             }
 
-            val dryRun = eventOptions.dryRun
-            if (storeEvent && !dryRun) {
+            if (storeEvent && !preventModelUpdates) {
                 eventStore.store(event, eventParametersJson)    // TODO: ugly!
             }
 
-            val eventResult = stateMachine.eventOccurred(event, preventModelUpdates = dryRun, performActions = performActions)
+            val eventResult = stateMachine.eventOccurred(event, preventModelUpdates = preventModelUpdates, performActions = performActions)
             when (eventResult) {
                 is Left -> return eventResult
                 is Right -> {
-                    val updatedModel = eventResult.b ?: return eventResult
-                    if (notifyListeners && !dryRun) {
+                    val updatedModels = eventResult.b
+                    if (notifyListeners && !preventModelUpdates) {
                         GlobalScope.launch {
-                            stateMachine.onStateChangeListeners.forEach { (it as suspend (Model<out ModelProperties>) -> Unit)(updatedModel) }
+                            updatedModels.forEach {
+                                val updatedModel = it
+                                stateMachine.onStateChangeListeners.forEach { (it as suspend (Model<out ModelProperties>) -> Unit)(updatedModel) }
+                            }
                         }
                     }
-                    if (!dryRun) {
-                        stateFlow.value =
-                            Simplebackend.EventUpdatedResponse.newBuilder()
-                                .setType(updatedModel.graphQlName)
-                                .setId(updatedModel.id)
-                                .setTimestamp(Instant.now().toEpochMilli())
-                                .build()
+                    if (!preventModelUpdates) {
+                        updatedModels.forEach {
+                            stateFlow.value =
+                                Simplebackend.EventUpdatedResponse.newBuilder()
+                                    .setType(it.graphQlName)
+                                    .setId(it.id)
+                                    .setTimestamp(Instant.now().toEpochMilli())
+                                    .build()
+                        }
                     }
                     return eventResult
                 }
@@ -186,7 +188,3 @@ class EventService<E : IEvent>(
     }
 
 }
-
-data class EventOptions(val dryRun: Boolean)
-
-// TODO: should actions be performed when the target state is the same as the original state?

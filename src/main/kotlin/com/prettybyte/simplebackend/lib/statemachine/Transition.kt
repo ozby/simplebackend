@@ -51,7 +51,8 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
         newState: State<T, E, ModelStates>,
         event: IEvent,
         view: IModelView<T>,
-        isDryRun: Boolean
+        preventModelUpdates: Boolean,
+        performActions: Boolean
     ): Model<T> {
         this.eventParams = eventParams
         if (currentState.isInitialState() && effectCreateModelFunction != null) {
@@ -65,7 +66,7 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
                 properties = modelProperties,
                 graphQlName = getGraphQlName(modelProperties),
             )
-            if (!isDryRun) {
+            if (!preventModelUpdates) {
                 view.create(created)
             }
             return created
@@ -77,7 +78,7 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
 
         if (effectUpdateModelFunction != null) {
             val newModel = modelBefore.copy(state = newState.name, properties = effectUpdateModelFunction!!.invoke(modelBefore, eventParams))
-            if (!isDryRun) {
+            if (!preventModelUpdates) {
                 view.update(newModel)
             }
             return newModel
@@ -85,11 +86,18 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
 
         if (effectCreateEventFunction != null) {
             val createdEvent = effectCreateEventFunction!!.invoke(modelBefore)
-            SimpleBackend.processEvent(createdEvent, eventParametersJson = createdEvent.params, UserIdentity.system())
+            SimpleBackend.processEvent(
+                createdEvent,
+                eventParametersJson = createdEvent.params,
+                userIdentity = UserIdentity.system(),
+                performActions = performActions,
+                preventModelUpdates = preventModelUpdates,
+                storeEvent = false
+            )
         }
 
         val modelWithUpdatedState = modelBefore.copy(state = newState.name)
-        if (!isDryRun) {
+        if (!preventModelUpdates) {
             view.update(modelWithUpdatedState)
         }
         return modelWithUpdatedState

@@ -20,7 +20,6 @@ fun `Event comes from white player`(game: Model<GameProperties>?, event: IEvent,
     return if (game.properties.whitePlayerId != user.id) BlockedByGuard("Not your turn") else null
 }
 
-
 fun `Event comes from black player`(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity): BlockedByGuard? {
     if (userIdentity.id == computerPlayer) {
         return null
@@ -136,6 +135,21 @@ fun `Automatic draw`(model: Model<GameProperties>): Boolean = isStalemate(model)
 
 fun canClaimDraw(model: Model<GameProperties>): Boolean = isThreefoldRepetition() || isFiftyMoves()
 
+fun piecesAfterMove(piecesBefore: List<String>, from: String, to: String): List<String> {
+    val piecesAfter = piecesBefore.toMutableList()
+    piecesAfter[squareToIndex(to)] = piecesBefore[squareToIndex(from)]
+    piecesAfter[squareToIndex(from)] = ""
+    if (from == "e1" && to == "g1") {   // castling
+        piecesAfter[squareToIndex("f1")] = piecesBefore[squareToIndex("h1")]
+        piecesAfter[squareToIndex("h1")] = ""
+    }
+    if (from == "e1" && to == "c1") {   // castling
+        piecesAfter[squareToIndex("d1")] = piecesBefore[squareToIndex("a1")]
+        piecesAfter[squareToIndex("a1")] = ""
+    }
+    return piecesAfter
+}
+
 private fun isWhiteCheck(pieces: List<String>, gameId: String): Boolean {
     val kingIndex = pieces.indexOf("wk")
     return calculateAllValidMoves(
@@ -162,21 +176,6 @@ private fun willMoveLeaveKingChecked(piecesBeforeMove: List<String>, state: Game
     // figure out if the opponent can take the king next move
     val piecesAfterMove = piecesAfterMove(piecesBeforeMove, move.first, move.second)
     return if (state == `White turn`) isWhiteCheck(piecesAfterMove, gameId) else isBlackCheck(piecesAfterMove, gameId)
-}
-
-fun piecesAfterMove(piecesBefore: List<String>, from: String, to: String): List<String> {
-    val piecesAfter = piecesBefore.toMutableList()
-    piecesAfter[squareToIndex(to)] = piecesBefore[squareToIndex(from)]
-    piecesAfter[squareToIndex(from)] = ""
-    if (from == "e1" && to == "g1") {   // castling
-        piecesAfter[squareToIndex("f1")] = piecesBefore[squareToIndex("h1")]
-        piecesAfter[squareToIndex("h1")] = ""
-    }
-    if (from == "e1" && to == "c1") {   // castling
-        piecesAfter[squareToIndex("d1")] = piecesBefore[squareToIndex("a1")]
-        piecesAfter[squareToIndex("a1")] = ""
-    }
-    return piecesAfter
 }
 
 private fun isStalemate(model: Model<GameProperties>): Boolean {
@@ -279,7 +278,7 @@ private fun validMovesForKing(board: Board, x: Int, y: Int, color: Color, gameId
     return validMoves
 }
 
-fun validCastlingMoves(board: Board, x: Int, y: Int, color: Color, gameId: String): Set<Pair<String, String>> {
+private fun validCastlingMoves(board: Board, x: Int, y: Int, color: Color, gameId: String): Set<Pair<String, String>> {
     val validMoves = mutableSetOf<Pair<String, String>>()
     val from = Board.getSquareName(x, y)
     when (color) {
@@ -315,11 +314,11 @@ fun validCastlingMoves(board: Board, x: Int, y: Int, color: Color, gameId: Strin
     return validMoves
 }
 
-fun blackCanMoveTo(x: Int, y: Int, board: Board, gameId: String, excludeCastling: Boolean): Boolean {
+private fun blackCanMoveTo(x: Int, y: Int, board: Board, gameId: String, excludeCastling: Boolean): Boolean {
     return calculateAllValidMoves(board.pieces, `Black turn`, gameId, excludeCastling = excludeCastling).any { it.second == Board.getSquareName(x, y) }
 }
 
-fun pieceHasMovedFrom(x: Int, y: Int, gameId: String): Boolean {
+private fun pieceHasMovedFrom(x: Int, y: Int, gameId: String): Boolean {
     val squareName = Board.getSquareName(x, y)
     return SimpleBackend.getEventsForModelId<Event>(gameId).any { it is MakeMove && it.getParams().from == squareName }
 }

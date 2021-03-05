@@ -37,4 +37,8 @@ object GameView : IModelView<GameProperties> {
             }
     }
 
+    fun getAllWhereUserIsPlayer(userId: String, authenticator: Auth<List<Model<GameProperties>>>): Auth<List<Model<GameProperties>>> {
+        return authenticator.withValue(games.values.filter { it.properties.whitePlayerId == userId || it.properties.blackPlayerId == userId })
+    }
+
 }
