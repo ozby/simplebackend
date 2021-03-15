@@ -4,14 +4,12 @@ import Event
 import UserProperties
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import com.prettybyte.simplebackend.lib.statemachine.stateMachine
-import createdByCorrectIdentity
 import hasNoOngoingGames
 import newUser
 import statemachines.UserStates.active
 import statemachines.UserStates.deleted
 import updateRating
 import updateUsersRating
-import userNotAlreadyCreated
 import sendWelcomeEmail as sendWelcomeEmail1
 
 const val createUser = "CreateUser"
@@ -27,8 +25,6 @@ fun userStateMachine(): StateMachine<UserProperties, Event, UserStates> =
     stateMachine {
         voidState {
             transition(triggeredByEvent = createUser, targetState = active) {
-                guard(::createdByCorrectIdentity)
-                guard(::userNotAlreadyCreated)
                 effectCreateModel(::newUser)
             }
         }

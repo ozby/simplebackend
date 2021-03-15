@@ -145,7 +145,7 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val t
         if (performActions) {
             block.actions.forEach { it(model, event) }
         }
-        block.effectCreateModelFunctions.forEach { it(event.getParams()) }
+        
         var updatedModels: List<Model<T>> = emptyList()
         if (model != null) {
             updatedModels =

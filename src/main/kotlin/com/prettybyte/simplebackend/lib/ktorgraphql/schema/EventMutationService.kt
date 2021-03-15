@@ -48,7 +48,7 @@ class EventMutationService<E : IEvent>(
                     CreateEventResponse(
                         blockedByGuards = emptyList(),
                         dryRun = dryRun,
-                        modifiedModels = result.b.map { json.encodeToString(it) }
+                        modifiedModels = result.b.map { json.encodeToString(it) }   // TODO: check if user is authorized to read models?
                     )
                 ).build()
             }

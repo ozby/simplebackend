@@ -4,7 +4,7 @@ import com.prettybyte.simplebackend.lib.*
 
 open class Block<T : ModelProperties, E : IEvent> {
 
-    internal val effectCreateModelFunctions = mutableListOf<(EventParams) -> T>()
+    internal val effectCreateModelFunctions = mutableListOf<(EventParams) -> T>()       // TODO: These should only be present in a transition from voidState
     internal val effectUpdateModelFunctions = mutableListOf<((Model<T>, EventParams) -> T)>()
     internal var effectCreateEventFunctions = mutableListOf<((Model<T>?) -> E)>()
     internal val actions: MutableList<(Model<T>?, E) -> Unit> = mutableListOf()

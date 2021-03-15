@@ -67,7 +67,7 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
                 graphQlName = getGraphQlName(modelProperties),
             )
             if (!preventModelUpdates) {
-                view.create(created)
+                view.create(created)    // TODO: should return error if it already exists
             }
             return created
         }
