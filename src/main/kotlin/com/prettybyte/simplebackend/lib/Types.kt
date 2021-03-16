@@ -1,6 +1,8 @@
 package com.prettybyte.simplebackend.lib
 
 import arrow.core.Either
+import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.allow
+import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.deny
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
@@ -25,8 +27,8 @@ data class Model<T : ModelProperties>(
 abstract class ModelProperties
 
 interface IModelView<T : ModelProperties> {
-    fun get(id: String, auth: Auth<Model<T>>): Auth<Model<T>> {
-        return auth.withValue(getWithoutAuthorization(id))
+    fun get(id: String): ReadModelAuthorizer<T> {
+        return ReadModelAuthorizer(getWithoutAuthorization(id))
     }
 
     fun getWithoutAuthorization(id: String): Model<T>?
@@ -35,21 +37,33 @@ interface IModelView<T : ModelProperties> {
     fun delete(id: String)
 }
 
-/**
- * Extend this class when you build an authorizer. An authorizer is a class that wraps a value.
- * Implement the authorization logic in the get function.
- *
- * See the examples for details how this can be used.
- */
-abstract class Auth<T> {
-    protected var theValue: T? = null
+class ReadModelAuthorizer<T : ModelProperties>(private val value: Model<T>?) {
 
-    abstract fun get(): Either<Problem, T?>
-
-    fun withValue(value: T?): Auth<T> {
-        theValue = value
-        return this
+    fun auth(userIdentity: UserIdentity): Either<Problem, Model<T>?> {
+        if (value == null) {
+            return Either.right(null)
+        }
+        val authorizationRuleResults = AuthorizerRules.readModelRules.map { it(userIdentity, value) }
+        if (authorizationRuleResults.any { it == deny }) {
+            return Either.left(Problem.unauthorized())  // TODO: tell the user which rule was violated?
+        }
+        if (authorizationRuleResults.any { it == allow }) {
+            return Either.right(value)
+        }
+        return Either.left(Problem.unauthorized("No policy explicitly allowed the request"))
     }
+
+}
+
+class ReadModelListAuthorizer<T : ModelProperties>(val theValueList: List<Model<T>>) {
+
+    fun auth(userIdentity: UserIdentity): Either<Problem, List<Model<T>>?> {
+        return Either.right(theValueList.filter { value ->
+            val authorizationRuleResults = AuthorizerRules.readModelRules.map { it(userIdentity, value) }
+            authorizationRuleResults.none { it == deny } && authorizationRuleResults.any { it == allow }
+        })
+    }
+
 }
 
 interface IEvent {
@@ -86,7 +100,6 @@ interface IEventAuthorizer<E : IEvent> {
      */
     fun onExchangeJWT(jws: Jws<Claims>): Problem?
 
-    fun isAllowedToCreateEvent(userIdentity: UserIdentity, event: E): Boolean
     fun isAllowedToSubscribeToEvents(userIdentity: UserIdentity): Boolean
 }
 
@@ -102,10 +115,3 @@ enum class MigrationAction {        // TODO: try using sealed classes instead so
 
 data class BlockedByGuard(val message: String)
 
-class AllowAll<T> : Auth<T>() {
-
-    override fun get(): Either<Problem, T?> {
-        return Either.Right(theValue)
-    }
-
-}

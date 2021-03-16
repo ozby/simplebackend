@@ -3,9 +3,9 @@ package views
 import Event
 import GameProperties
 import com.prettybyte.simplebackend.SimpleBackend
-import com.prettybyte.simplebackend.lib.Auth
 import com.prettybyte.simplebackend.lib.IModelView
 import com.prettybyte.simplebackend.lib.Model
+import com.prettybyte.simplebackend.lib.ReadModelListAuthorizer
 
 object GameView : IModelView<GameProperties> {
 
@@ -25,8 +25,8 @@ object GameView : IModelView<GameProperties> {
         games.remove(id)
     }
 
-    fun getAll(authenticator: Auth<List<Model<GameProperties>>>): Auth<List<Model<GameProperties>>> {
-        return authenticator.withValue(games.values.toList())
+    fun getAll(): ReadModelListAuthorizer<GameProperties> {
+        return ReadModelListAuthorizer(games.values.toList())
     }
 
     fun history(id: String): List<String> {
@@ -37,8 +37,8 @@ object GameView : IModelView<GameProperties> {
             }
     }
 
-    fun getAllWhereUserIsPlayer(userId: String, authenticator: Auth<List<Model<GameProperties>>>): Auth<List<Model<GameProperties>>> {
-        return authenticator.withValue(games.values.filter { it.properties.whitePlayerId == userId || it.properties.blackPlayerId == userId })
+    fun getAllWhereUserIsPlayer(userId: String): ReadModelListAuthorizer<GameProperties> {
+        return ReadModelListAuthorizer(games.values.filter { it.properties.whitePlayerId == userId || it.properties.blackPlayerId == userId })
     }
 
 }

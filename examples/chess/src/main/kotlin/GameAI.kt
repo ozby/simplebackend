@@ -67,7 +67,7 @@ private fun calculateMove(model: Model<GameProperties>) {
         Pair(it, calculateScore(result))
     }
 
-    val maxScore = scoredMoves.maxByOrNull { it.second }?.second ?: throw Exception()
+    val maxScore = scoredMoves.maxByOrNull { it.second }?.second ?: return
     val selectedMove = scoredMoves.filter { it.second == maxScore }.random(rnd).first
     val params = """{"from": "${selectedMove.first}", "to": "${selectedMove.second}"}"""
     val event = MakeMove(gameId = model.id, params = params, userIdentityId = computerPlayer)

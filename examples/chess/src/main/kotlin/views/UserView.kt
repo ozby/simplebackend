@@ -1,9 +1,9 @@
 package views
 
 import UserProperties
-import arrow.core.Either.Left
-import arrow.core.Either.Right
-import com.prettybyte.simplebackend.lib.*
+import com.prettybyte.simplebackend.lib.IModelView
+import com.prettybyte.simplebackend.lib.Model
+import com.prettybyte.simplebackend.lib.UserIdentity
 
 object UserView : IModelView<UserProperties> {
 
@@ -29,15 +29,8 @@ object UserView : IModelView<UserProperties> {
         return users.values.firstOrNull { it.properties.userIdentityId == userIdentity.id }
     }
 
-    fun getByUserIdentityId(userIdentityId: String, readAuthenticator: Auth<Model<UserProperties>>): Auth<Model<UserProperties>> {
-        return readAuthenticator.withValue(users.values.firstOrNull { it.properties.userIdentityId == userIdentityId })
-    }
-
     fun getByUserIdentityIdWithoutAuthorization(userIdentityId: String): Model<UserProperties>? {
-        return when (val u = getByUserIdentityId(userIdentityId, AllowAll()).get()) {
-            is Left -> null
-            is Right -> u.b
-        }
+        return users[userIdentityId]
     }
 
 }

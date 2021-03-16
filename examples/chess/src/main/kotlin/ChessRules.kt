@@ -13,7 +13,7 @@ fun `Event comes from white player`(game: Model<GameProperties>?, event: IEvent,
     if (userIdentity.id == computerPlayer) {
         return null
     }
-    val user = getActiveUser(userIdentity) ?: return BlockedByGuard("Can't find user")
+    val user = getActiveUserWithoutAuthorization(userIdentity) ?: return BlockedByGuard("Can't find user")
     if (game == null) {
         return BlockedByGuard("isCorrectPlayer: game was null")
     }
@@ -24,7 +24,7 @@ fun `Event comes from black player`(game: Model<GameProperties>?, event: IEvent,
     if (userIdentity.id == computerPlayer) {
         return null
     }
-    val user = getActiveUser(userIdentity) ?: return BlockedByGuard("Can't find user")
+    val user = getActiveUserWithoutAuthorization(userIdentity) ?: return BlockedByGuard("Can't find user")
     if (game == null) {
         return BlockedByGuard("isCorrectPlayer: game was null")
     }

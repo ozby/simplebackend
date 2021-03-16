@@ -1,12 +1,15 @@
 import EventAuthorizer.Roles.player
 import EventAuthorizer.Roles.viewer
 import arrow.core.Either
-import com.prettybyte.simplebackend.lib.*
+import com.prettybyte.simplebackend.lib.BlockedByGuard
+import com.prettybyte.simplebackend.lib.EventParams
+import com.prettybyte.simplebackend.lib.Model
+import com.prettybyte.simplebackend.lib.UserIdentity
 import views.GameView
 import views.UserView
 
 fun hasNoOngoingGames(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
-    return when (val result = GameView.getAllWhereUserIsPlayer(getActiveUser(userIdentity)?.id ?: "", AllowAll()).get()) {
+    return when (val result = GameView.getAllWhereUserIsPlayer(getActiveUserWithoutAuthorization(userIdentity)?.id ?: "").auth(userIdentity)) {
         is Either.Left -> BlockedByGuard(result.a.message)
         is Either.Right -> if (result.b!!.isEmpty()) null else BlockedByGuard("Cannot delete user since he/she has ongoing games")
     }

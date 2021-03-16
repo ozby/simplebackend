@@ -26,18 +26,18 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlin.reflect.KClass
 
-const val USER_IDENTITY = "userIdentity"
-
 internal class SimpleBackendWrapped<E : IEvent>(
     eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,      // TODO: reflection?
     eventAuthorizer: IEventAuthorizer<E>,
     private val managedModels: Set<ManagedModel<*, E, *>>,
-    private val port: Int,
+    port: Int,
     serModule: SerializersModule,   // TODO: ugly. Can reflection help?
     databaseConnection: DatabaseConnection,
     migrations: IMigrations<E>?,
-    val customGraphqlPackages: List<String>,
-    val customQueries: List<TopLevelObject>,
+    customGraphqlPackages: List<String>,
+    customQueries: List<TopLevelObject>,
+    authorizationReadRules: Set<(UserIdentity, Model<out ModelProperties>) -> AuthorizationRuleResult>,
+    authorizationEventRules: Set<(UserIdentity, IEvent) -> AuthorizationRuleResult>
 ) {
     private var grpcServer: Server
     private var ktorServer: NettyApplicationEngine
@@ -51,6 +51,8 @@ internal class SimpleBackendWrapped<E : IEvent>(
 
     init {
 
+        AuthorizerRules.readModelRules = authorizationReadRules
+        AuthorizerRules.eventRules = authorizationEventRules
         // TODO 1.0: validate that the provided ModelProperties classes are named "xProperties" e.g. GameProperties.
 
         managedModels.forEach { it.stateMachine.setView(it.view) }
@@ -179,7 +181,9 @@ object SimpleBackend {
         databaseConnection: DatabaseConnection,
         migrations: IMigrations<E>?,
         customGraphqlPackages: List<String>,
-        customQueries: List<TopLevelObject>
+        customQueries: List<TopLevelObject>,
+        authorizationReadRules: Set<(UserIdentity, Model<out ModelProperties>) -> AuthorizationRuleResult>,
+        authorizationEventRules: Set<(UserIdentity, IEvent) -> AuthorizationRuleResult>,
     ) {
         sb = SimpleBackendWrapped(
             eventParser,
@@ -190,7 +194,9 @@ object SimpleBackend {
             databaseConnection,
             migrations,
             customGraphqlPackages,
-            customQueries
+            customQueries,
+            authorizationReadRules,
+            authorizationEventRules
         )
     }
 
@@ -242,3 +248,5 @@ class TransitionDescription(private val transition: Transition<out ModelProperti
         funString.substring(startIndex, funString.indexOf("`", startIndex + 1))
     }
 }
+
+// TODO: use DSL for SimpleBackend like we do with the state machines

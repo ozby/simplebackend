@@ -4,6 +4,8 @@ import arrow.core.Either.Left
 import arrow.core.Either.Right
 import com.expediagroup.graphql.types.operations.Mutation
 import com.prettybyte.simplebackend.lib.*
+import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.allow
+import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.deny
 import com.prettybyte.simplebackend.lib.ktorgraphql.AuthorizedContext
 import com.prettybyte.simplebackend.logAndMakeInternalException
 import graphql.execution.DataFetcherResult
@@ -33,9 +35,12 @@ class EventMutationService<E : IEvent>(
             val userIdentity = context.userIdentity
             val event = eventParser(eventName, modelId, eventParametersJson, userIdentity.id)
             validateParams(event)
-            if (!eventAuthorizer.isAllowedToCreateEvent(userIdentity, event)) {
-                DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "Permission denied")).build()
+
+            val authorizationRuleResults = AuthorizerRules.eventRules.map { it(userIdentity, event) }
+            if (authorizationRuleResults.any { it == deny } || authorizationRuleResults.none { it == allow }) {
+                return DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "Permission denied")).build()
             }
+
             return when (val result = eventService.process(
                 event,
                 eventParametersJson,

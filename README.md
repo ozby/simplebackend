@@ -43,10 +43,15 @@ Note that blobs should not be stored in the memory (use e.g. a CDN instead).
 Since all data is kept in the application's memory, it must be running on a machine with plenty of RAM (these days you can find cloud instances with up to 24
 TiB RAM).
 
+### Caching?
+
+As the data resides in memory, there is no need for caches. SimpleBackend is likely going to respond to a HTTP request within 1 ms.
+
 ### Scalability
 
 Since the design goal is simplicity, there should only be one instance of SimpleBackend. This means that SimpleBackend can only be scaled vertically. Computers
-are pretty fast these days and SimpleBackend should be quite performant, so it is likely that one instance will be enough for most systems.
+are pretty fast these days and SimpleBackend should be quite performant, so it is likely that one instance will be enough for most systems. If this is not
+enough, you could consider sharding (e.g. one instance per customer).
 
 In the future, we may allow more complex configurations that would enable horizontal scalability.
 
@@ -72,18 +77,18 @@ At the moment, gRPC is used to manage subscribe to events (this will be handled 
 
 Currently, only Google Sign-In is supported. The client should acquire a JWT from Google and that JWT should be set in the 'Authorization' header
 (as "Bearer ..."). In your application, you can access a UserIdentity object which will contain "subject" from the JWT. Most applications will want to have more
-information about the user than that, so they will have a User model that corresponds to the subject.
+information about the user than that, so you will probably want to have a User model that corresponds to the subject.
 
 ### Authorization
 
-You must provide an implementation of the IEventAuthorizer interface so that SimpleServer knows if the user is authorized to create events.
+SimpleBackend includes a rule engine which makes it easy to implement an attribute-based access control (ABAC). By default, both reads and events are denied, so
+you need to add rules that explicitly allows users to do stuff.
 
-When it comes to reading data, it is recommended that your views should wrap the data in an Auth object. This way the authorization must be explicit, so you
-cannot forget to authorize queries. See the examples for details how it can be used.
+ABAC is quite flexible and can easily be used to only check for roles if you prefer role-based access control (RBAC).
 
-There are many ways you can implement authorization. One straight forward way is Role Based Access Control where you check if a specific role is stored on a
-User model. Just remember to verify updates on the User model so that the user cannot set the roles himself.
+It is recommended that your views should not return the data directly but wrap it in an ReadModelAuthorizer object. This way you cannot forget to authorize
+queries. See the examples for details how it can be used.
 
 ## What if I need more than SimpleBackend can provide?
 
-It is possible to provide custom queries and modifications when configuring SimpleBackend, giving you full control.
+It is possible to provide custom GraphQL queries and modifications when configuring SimpleBackend, giving you full control.
