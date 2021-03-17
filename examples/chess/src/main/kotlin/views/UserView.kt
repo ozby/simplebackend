@@ -26,11 +26,11 @@ object UserView : IModelView<UserProperties> {
     }
 
     fun getWithoutAuthorization(userIdentity: UserIdentity): Model<UserProperties>? {
-        return users.values.firstOrNull { it.properties.userIdentityId == userIdentity.id }
+        return getByUserIdentityIdWithoutAuthorization(userIdentity.id)
     }
 
     fun getByUserIdentityIdWithoutAuthorization(userIdentityId: String): Model<UserProperties>? {
-        return users[userIdentityId]
+        return users.values.firstOrNull { it.properties.userIdentityId == userIdentityId }
     }
 
 }

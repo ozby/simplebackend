@@ -26,14 +26,15 @@ into a state machine.
 
 If you are not familiar with UML state machines you may want to look at https://en.wikipedia.org/wiki/UML_state_machine.
 
-The code you write is more functional and declarative than imperative.
+The code you write is more functional and declarative than imperative. You will declare state machines using functions that you provide. The functions must not
+have any side effects (but they don't have to be pure since they may read the current state from views).
 
 ### How do I access the database?
 
 In order to simplify things, you don't need to deal with a database. Instead, the data is kept in memory (don't worry, the Events are persisted so the
 application can be restarted without loosing data). Benefits:
 
-* All you need is Kotlin, you don't have to be an expert in SQL.
+* All you need is Kotlin, you don't have to know any SQL.
 * You don't have to write code to handle errors if the database is unresponsive.
 * Less boilerplate: you don't have to convert data to/from the database.
 * Lower latency since you avoid the network request to the database.
@@ -45,7 +46,7 @@ TiB RAM).
 
 ### Caching?
 
-As the data resides in memory, there is no need for caches. SimpleBackend is likely going to respond to a HTTP request within 1 ms.
+As the data resides in memory, there is no need for caches. SimpleBackend is likely going to respond to a query within 1 ms.
 
 ### Scalability
 
@@ -77,7 +78,7 @@ At the moment, gRPC is used to manage subscribe to events (this will be handled 
 
 Currently, only Google Sign-In is supported. The client should acquire a JWT from Google and that JWT should be set in the 'Authorization' header
 (as "Bearer ..."). In your application, you can access a UserIdentity object which will contain "subject" from the JWT. Most applications will want to have more
-information about the user than that, so you will probably want to have a User model that corresponds to the subject.
+information about the user than that, so you will likely want to have a User model that corresponds to the subject.
 
 ### Authorization
 
