@@ -4,9 +4,12 @@ import arrow.core.Either.Left
 import arrow.core.Either.Right
 import com.expediagroup.graphql.types.operations.Mutation
 import com.prettybyte.simplebackend.SingletonStuff
-import com.prettybyte.simplebackend.lib.*
+import com.prettybyte.simplebackend.lib.EventService
+import com.prettybyte.simplebackend.lib.IEvent
 import com.prettybyte.simplebackend.lib.NegativeAuthorization.deny
 import com.prettybyte.simplebackend.lib.PositiveAuthorization.allow
+import com.prettybyte.simplebackend.lib.Problem
+import com.prettybyte.simplebackend.lib.Status
 import com.prettybyte.simplebackend.lib.ktorgraphql.AuthorizedContext
 import com.prettybyte.simplebackend.logAndMakeInternalException
 import graphql.execution.DataFetcherResult
@@ -19,7 +22,6 @@ class EventMutationService<E : IEvent, V>(
     private val eventService: EventService<E, V>,
     private val eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,
     private val json: Json,
-    private val eventAuthorizer: IEventAuthorizer<E>,
 ) : Mutation {
 
     suspend fun createEvent(
@@ -37,13 +39,14 @@ class EventMutationService<E : IEvent, V>(
             val event = eventParser(eventName, modelId, eventParametersJson, userIdentity.id)
             validateParams(event)
 
-            val negativeAuthProblem = SingletonStuff.getEventNegativeRules<V>().firstOrNull { it(userIdentity, event, SingletonStuff.getViews()) == deny }
+            val negativeAuthProblem = SingletonStuff.getEventNegativeRules<V, E>().firstOrNull { it(userIdentity, event, SingletonStuff.getViews()) == deny }
             if (negativeAuthProblem != null) {
                 return DataFetcherResult.newResult<CreateEventResponse>()
                     .error(Problem(Status.UNAUTHORIZED, extractNameFromFunction(negativeAuthProblem))).build()
             }
-            if (SingletonStuff.getEventPositiveRules<V>().none { it(userIdentity, event, SingletonStuff.getViews()) == allow }) {
-                return DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.UNAUTHORIZED, "No policy allowed this operation")).build()
+            if (SingletonStuff.getEventPositiveRules<V, E>().none { it(userIdentity, event, SingletonStuff.getViews()) == allow }) {
+                return DataFetcherResult.newResult<CreateEventResponse>()
+                    .error(Problem(Status.UNAUTHORIZED, "Event '$eventName' was not created since no policy allowed the operation")).build()
             }
 
             return when (val result = eventService.process(

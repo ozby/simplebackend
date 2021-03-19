@@ -1,6 +1,5 @@
 package modelviews
 
-import Event
 import GameProperties
 import Views
 import com.prettybyte.simplebackend.lib.IModelView
@@ -31,7 +30,7 @@ class GameView<V> : IModelView<GameProperties, V> {
     }
 
     fun history(id: String, user: UserView<Views>): List<String> {
-        return simpleBackend.getEventsForModelId<Event, Views>(id)
+        return simpleBackend.getEventsForModelId(id)
             .map {
                 val userName = user.getByUserIdentityIdWithoutAuthorization(it.userIdentityId)?.properties?.firstName ?: it.userIdentityId
                 "$userName $it"

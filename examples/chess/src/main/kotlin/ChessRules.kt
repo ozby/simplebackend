@@ -319,7 +319,7 @@ private fun blackCanMoveTo(x: Int, y: Int, board: Board, gameId: String, exclude
 
 private fun pieceHasMovedFrom(x: Int, y: Int, gameId: String): Boolean {
     val squareName = Board.getSquareName(x, y)
-    return simpleBackend.getEventsForModelId<Event, Views>(gameId).any { it is MakeMove && it.getParams().from == squareName }
+    return simpleBackend.getEventsForModelId(gameId).any { it is MakeMove && it.getParams().from == squareName }
 }
 
 private fun validMovesForRook(board: Board, x: Int, y: Int, color: Color): Set<Pair<String, String>> {

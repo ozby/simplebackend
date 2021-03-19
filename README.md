@@ -61,8 +61,8 @@ In the future, we may allow more complex configurations that would enable horizo
 Having only one instance of SimpleBackend means that there is no redundancy. Therefore, it is not a good idea to use SimpleBackend if people's lives are
 depending on your application.
 
-That said, it is also true that complex systems are more error-prone than simple systems. Also, uptime can be improved by hosting the application in a Tier IV
-datacenter (99.995% uptime).
+That said, complex systems are usually more fragile than simple systems. Also, uptime can be improved by hosting the application in a Tier IV datacenter (
+99.995% uptime).
 
 In the future, we may allow more complex configurations that would enable redundancy.
 

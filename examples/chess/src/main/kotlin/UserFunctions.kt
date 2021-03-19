@@ -1,5 +1,3 @@
-import EventAuthorizer.Roles.player
-import EventAuthorizer.Roles.viewer
 import arrow.core.Either
 import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.EventParams
@@ -47,7 +45,6 @@ fun newUser(eventParams: EventParams): UserProperties {
         userIdentityId = eventParams.userIdentityId,
         firstName = eventParams.firstName,
         lastName = eventParams.lastName,
-        roles = setOf(viewer, player),
         victories = 0,
         defeats = 0,
         draws = 0,

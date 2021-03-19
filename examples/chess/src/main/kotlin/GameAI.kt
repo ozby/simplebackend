@@ -45,7 +45,7 @@ private fun promotePawn(model: Model<GameProperties>) {
 private fun calculateMove(model: Model<GameProperties>) {
     // first see if we should propose draw
     if (whiteIsAhead(model) &&
-        !simpleBackend.getEventsForModelId<Event, Views>(model.id).any { it.name == proposeDraw }
+        !simpleBackend.getEventsForModelId(model.id).any { it.name == proposeDraw }
     ) {
         val params = """{"test": ""}"""
         val event = ProposeDraw(gameId = model.id, params = params, userIdentityId = computerPlayer)

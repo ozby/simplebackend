@@ -7,8 +7,6 @@ import com.prettybyte.simplebackend.SingletonStuff
 import com.prettybyte.simplebackend.lib.NegativeAuthorization.deny
 import com.prettybyte.simplebackend.lib.PositiveAuthorization.allow
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
-import io.jsonwebtoken.Claims
-import io.jsonwebtoken.Jws
 import kotlinx.serialization.Serializable
 import kotlin.reflect.KClass
 
@@ -98,7 +96,7 @@ class RawEvent(
 
 class RawEventParams : EventParams()
 
-interface IEventAuthorizer<E : IEvent> {
+/*interface IEventAuthorizer<E : IEvent> {
     /**
      * This will be called when a client wants to acquire an simplebackend.SimpleBackend JWT. For Single-Sign On, this is a good place to
      * create a new user (unless the user has already been created).
@@ -109,6 +107,7 @@ interface IEventAuthorizer<E : IEvent> {
 
     fun isAllowedToSubscribeToEvents(userIdentity: UserIdentity): Boolean
 }
+ */
 
 interface IMigrations<E : IEvent> {
     fun migrate(old: RawEvent): Pair<MigrationAction, E?>

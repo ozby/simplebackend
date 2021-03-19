@@ -11,10 +11,10 @@ class StateMachine<T : ModelProperties, E : IEvent, ModelStates : Enum<*>, V>(va
 
     // TODO: Scope control (see https://kotlinlang.org/docs/type-safe-builders.html#scope-control-dslmarker)
 
-    internal lateinit var modelView: IModelView<T, V>
+    private lateinit var modelView: IModelView<T, V>
     val onStateChangeListeners: MutableList<in suspend (Model<T>) -> Unit> = mutableListOf<suspend (Model<T>) -> Unit>()
     private lateinit var currentState: State<T, E, ModelStates, V>
-    internal val states = mutableListOf<State<T, E, ModelStates, V>>()
+    private val states = mutableListOf<State<T, E, ModelStates, V>>()
     private lateinit var initialState: State<T, E, ModelStates, V>
 
     internal fun setView(view: IModelView<*, V>) {
@@ -214,24 +214,3 @@ inline fun <reified T : ModelProperties, E : IEvent, ModelStates : Enum<*>, V> s
     // TODO: make sure all states are declared (stateMachine.states == ModelStates)
     return stateMachine
 }
-
-/*
-
-A state can have many transitions in response to the same trigger, as long as they have nonoverlapping guards; however, this situation could create problems in the sequence of evaluation of the guards when the common trigger occurs. The UML specification[1] intentionally does not stipulate any particular order; rather, UML puts the burden on the designer to devise guards in such a way that the order of their evaluation does not matter. Practically, this means that guard expressions should have no side effects, at least none that would alter evaluation of other guards having the same trigger.
-    -> guards får inte ändra på något, bara läsa
-
-ska kunna berätta för klienten vilka triggers (events) som nu är möjliga (detta beror bara på nuvarande state, inte på guards (?). Klienten kan då t.ex. avgöra om "Delete"-knappen ska visas.
-klienten ska kunna torrköra event och guards för att t.ex. validera ett formulär
-
-
-Senare:
-State som funktion av relation. T.ex. Ping state räknas ut genom att gå igenom dess PingMembers. Så om en PingMember ändras så ska Pings state räknas om.
-State som funktion av tid.
-
-
-State:
-- har transitions
-- har entry och exit actions
-
-
- */

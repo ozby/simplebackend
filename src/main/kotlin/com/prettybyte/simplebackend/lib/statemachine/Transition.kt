@@ -6,7 +6,7 @@ import com.prettybyte.simplebackend.lib.*
 class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>, V>(
     val trigger: String?,
     val triggeredIf: ((Model<T>) -> Boolean)?,
-    val targetState: ModelStates
+    private val targetState: ModelStates
 ) {
 
     internal lateinit var currentState: State<T, E, ModelStates, V>
@@ -16,7 +16,7 @@ class Transition<T : ModelProperties, E : IEvent, ModelStates : Enum<*>, V>(
     private var effectUpdateModelFunction: ((Model<T>, EventParams) -> T)? = null
     private var effectCreateEventFunction: ((Model<T>) -> E)? = null
     private var model: T? = null
-    internal val guardFunctions: MutableList<(Model<T>?, E, UserIdentity, V) -> BlockedByGuard?> = mutableListOf()
+    private val guardFunctions: MutableList<(Model<T>?, E, UserIdentity, V) -> BlockedByGuard?> = mutableListOf()
 
     fun effectCreateModel(f: (EventParams) -> T) {
         effectCreateModelFunction = f
