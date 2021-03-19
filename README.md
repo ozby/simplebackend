@@ -21,10 +21,10 @@ Suitable for systems:
 
 ### Important patterns
 
-With SimpleBackend you will be using the event sourcing and CQRS patterns. The promoted way to create or modify data is through an Event which will be inserted
-into a state machine.
+You should have an understanding of [UML state machines](https://en.wikipedia.org/wiki/UML_state_machine).
 
-If you are not familiar with UML state machines you may want to look at https://en.wikipedia.org/wiki/UML_state_machine.
+With SimpleBackend you will be using the event sourcing and CQRS patterns. The orthodox way to create or modify data is through an Event which will be inserted
+into a state machine.
 
 The code you write is more functional and declarative than imperative. You will declare state machines using functions that you provide. The functions should be
 [pure](https://en.wikipedia.org/wiki/Pure_function).
@@ -83,7 +83,7 @@ information about the user than that, so you will likely want to have a User mod
 ### Authorization
 
 SimpleBackend includes a rule engine which makes it easy to implement an attribute-based access control (ABAC). By default, both reads and events are denied, so
-you need to add rules that explicitly allows users to do stuff.
+you need to add positive rules that explicitly allows users to do stuff.
 
 ABAC is quite flexible and can easily be used to only check for roles if you prefer role-based access control (RBAC).
 

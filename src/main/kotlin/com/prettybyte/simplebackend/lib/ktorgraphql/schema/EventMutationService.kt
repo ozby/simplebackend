@@ -5,8 +5,8 @@ import arrow.core.Either.Right
 import com.expediagroup.graphql.types.operations.Mutation
 import com.prettybyte.simplebackend.SingletonStuff
 import com.prettybyte.simplebackend.lib.*
-import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.allow
-import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.deny
+import com.prettybyte.simplebackend.lib.NegativeAuthorization.deny
+import com.prettybyte.simplebackend.lib.PositiveAuthorization.allow
 import com.prettybyte.simplebackend.lib.ktorgraphql.AuthorizedContext
 import com.prettybyte.simplebackend.logAndMakeInternalException
 import graphql.execution.DataFetcherResult
@@ -37,9 +37,13 @@ class EventMutationService<E : IEvent, V>(
             val event = eventParser(eventName, modelId, eventParametersJson, userIdentity.id)
             validateParams(event)
 
-            val authorizationRuleResults = SingletonStuff.getEventRules<V>().map { it(userIdentity, event, SingletonStuff.getViews()) }
-            if (authorizationRuleResults.any { it == deny } || authorizationRuleResults.none { it == allow }) {
-                return DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "Permission denied")).build()
+            val negativeAuthProblem = SingletonStuff.getEventNegativeRules<V>().firstOrNull { it(userIdentity, event, SingletonStuff.getViews()) == deny }
+            if (negativeAuthProblem != null) {
+                return DataFetcherResult.newResult<CreateEventResponse>()
+                    .error(Problem(Status.UNAUTHORIZED, extractNameFromFunction(negativeAuthProblem))).build()
+            }
+            if (SingletonStuff.getEventPositiveRules<V>().none { it(userIdentity, event, SingletonStuff.getViews()) == allow }) {
+                return DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.UNAUTHORIZED, "No policy allowed this operation")).build()
             }
 
             return when (val result = eventService.process(
@@ -61,6 +65,12 @@ class EventMutationService<E : IEvent, V>(
         } catch (e: Exception) {
             throw logAndMakeInternalException(e)
         }
+    }
+
+    private fun extractNameFromFunction(f: Function<Any>): String {
+        val funString = f.toString()
+        val startIndex = funString.indexOf("`") + 1
+        return funString.substring(startIndex, funString.indexOf("`", startIndex + 1))
     }
 
     private fun validateParams(event: E) {

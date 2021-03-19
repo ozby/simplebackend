@@ -24,15 +24,19 @@ import kotlin.reflect.KClass
 
 object SingletonStuff {
 
+    // TODO: can we make this immutable?
+
     internal lateinit var views: Any
-    internal var readModelRules: Set<(UserIdentity, Model<out ModelProperties>, Any) -> AuthorizationRuleResult> =
-        emptySet() // TODO: can we make this immutable?
-    internal var eventRules: Set<(UserIdentity, IEvent, Any) -> AuthorizationRuleResult> = emptySet() // TODO: can we make this immutable?
+    internal var readModelPositiveRules: Set<(UserIdentity, Model<out ModelProperties>, Any) -> PositiveAuthorization> = emptySet()
+    internal var readModelNegativeRules: Set<(UserIdentity, Model<out ModelProperties>, Any) -> NegativeAuthorization> = emptySet()
+    internal var eventPositiveRules: Set<(UserIdentity, IEvent, Any) -> PositiveAuthorization> = emptySet()
+    internal var eventNegativeRules: Set<(UserIdentity, IEvent, Any) -> NegativeAuthorization> = emptySet()
 
     fun <V> getViews() = views as V
-    fun <V> getReadModelRules() = readModelRules as Set<(UserIdentity, Model<out ModelProperties>, V) -> AuthorizationRuleResult>
-    fun <V> getEventRules() = eventRules as Set<(UserIdentity, IEvent, V) -> AuthorizationRuleResult>
-
+    fun <V> getReadModelPositiveRules() = readModelPositiveRules as Set<(UserIdentity, Model<out ModelProperties>, V) -> PositiveAuthorization>
+    fun <V> getReadModelNegativeRules() = readModelNegativeRules as Set<(UserIdentity, Model<out ModelProperties>, V) -> NegativeAuthorization>
+    fun <V> getEventPositiveRules() = eventPositiveRules as Set<(UserIdentity, IEvent, V) -> PositiveAuthorization>
+    fun <V> getEventNegativeRules() = eventNegativeRules as Set<(UserIdentity, IEvent, V) -> NegativeAuthorization>
 
 }
 
@@ -46,8 +50,10 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
     migrations: IMigrations<E>?,
     customGraphqlPackages: List<String>,
     customQueries: List<TopLevelObject>,
-    authorizationReadRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> AuthorizationRuleResult>,
-    authorizationEventRules: Set<(UserIdentity, IEvent, V) -> AuthorizationRuleResult>,
+    authorizationReadPositiveRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> PositiveAuthorization>,
+    authorizationReadNegativeRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> NegativeAuthorization>,
+    authorizationEventPositiveRules: Set<(UserIdentity, IEvent, V) -> PositiveAuthorization>,
+    authorizationEventNegativeRules: Set<(UserIdentity, IEvent, V) -> NegativeAuthorization>,
     views: V,
 ) {
     private var grpcServer: Server
@@ -60,8 +66,11 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
 
     init {
         SingletonStuff.views = views as Any
-        SingletonStuff.readModelRules = authorizationReadRules as Set<(UserIdentity, Model<out ModelProperties>, Any) -> AuthorizationRuleResult>
-        SingletonStuff.eventRules = authorizationEventRules as Set<(UserIdentity, IEvent, Any) -> AuthorizationRuleResult>
+        SingletonStuff.readModelPositiveRules = authorizationReadPositiveRules as Set<(UserIdentity, Model<out ModelProperties>, Any) -> PositiveAuthorization>
+        SingletonStuff.readModelNegativeRules = authorizationReadNegativeRules as Set<(UserIdentity, Model<out ModelProperties>, Any) -> NegativeAuthorization>
+        SingletonStuff.eventPositiveRules = authorizationEventPositiveRules as Set<(UserIdentity, IEvent, Any) -> PositiveAuthorization>
+        SingletonStuff.eventNegativeRules = authorizationEventNegativeRules as Set<(UserIdentity, IEvent, Any) -> NegativeAuthorization>
+
         // TODO 1.0: validate that the provided ModelProperties classes are named "xProperties" e.g. GameProperties.
 
         managedModels.forEach { it.stateMachine.setView(it.view) }
@@ -189,8 +198,10 @@ class SimpleBackend<E : IEvent, V> {
         migrations: IMigrations<E>?,
         customGraphqlPackages: List<String>,
         customQueries: List<TopLevelObject>,
-        authorizationReadRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> AuthorizationRuleResult>,
-        authorizationEventRules: Set<(UserIdentity, IEvent, V) -> AuthorizationRuleResult>,
+        authorizationReadPositiveRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> PositiveAuthorization>,
+        authorizationReadNegativeRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> NegativeAuthorization>,
+        authorizationEventPositiveRules: Set<(UserIdentity, IEvent, V) -> PositiveAuthorization>,
+        authorizationEventNegativeRules: Set<(UserIdentity, IEvent, V) -> NegativeAuthorization>,
         views: V
     ) {
         sb = SimpleBackendWrapped(
@@ -203,12 +214,13 @@ class SimpleBackend<E : IEvent, V> {
             migrations,
             customGraphqlPackages,
             customQueries,
-            authorizationReadRules,
-            authorizationEventRules,
+            authorizationReadPositiveRules,
+            authorizationReadNegativeRules,
+            authorizationEventPositiveRules,
+            authorizationEventNegativeRules,
             views,
         )
     }
-
 
     private lateinit var sb: SimpleBackendWrapped<E, V>
 
@@ -266,5 +278,6 @@ class TransitionDescription(private val transition: Transition<out ModelProperti
 }
 
  */
+
 
 // TODO: use DSL for SimpleBackend like we do with the state machines

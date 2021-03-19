@@ -39,12 +39,14 @@ fun main() {
         },
         customGraphqlPackages = listOf("graphql"),
         customQueries = listOf(TopLevelObject(GameQueryService(myViews))),
-        authorizationReadRules = setOf(::`A user can read games where she is a player`, ::`Black victories cannot be read`),
-        authorizationEventRules = setOf(
+        authorizationReadPositiveRules = setOf(::`A user can read games where she is a player`),
+        authorizationReadNegativeRules = emptySet(), //  setOf(::`Black victories cannot be read`),
+        authorizationEventPositiveRules = setOf(
             ::`A user can be created`,
             ::`A user can create a game`,
             ::`A user can perform actions in a game where she is a player`
         ),
+        authorizationEventNegativeRules = emptySet(),
         views = myViews,
     )
     simpleBackend.start()

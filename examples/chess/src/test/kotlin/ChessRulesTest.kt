@@ -5,9 +5,7 @@ import modelviews.GameView
 import modelviews.UserView
 import statemachines.GameState
 import statemachines.UserStates
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class ChessRulesTest() {
 
@@ -58,14 +56,13 @@ class ChessRulesTest() {
 
     @Test
     fun isCorrectPlayer() {
-        val problem = `Event comes from white player`(freshGameModel, moveA2A3Event, userIdentity1, views)
-        assertTrue { problem == null }
+        assertNull(`Event comes from white player`(freshGameModel, moveA2A3Event, userIdentity1, views))
     }
 
     @Test
     fun isValidMove() {
-        assertTrue { `Validate move`(freshGameModel, moveA2A3Event, userIdentity1, views) == null }
-        assertTrue { `Validate move`(freshGameModel, moveToIllegalSquareEvent, userIdentity1, views) != null }
+        assertNull(`Validate move`(freshGameModel, moveA2A3Event, userIdentity1, views))
+        assertNotNull(`Validate move`(freshGameModel, moveToIllegalSquareEvent, userIdentity1, views))
     }
 
     @Test
