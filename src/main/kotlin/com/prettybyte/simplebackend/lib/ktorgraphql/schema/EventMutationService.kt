@@ -3,6 +3,7 @@ package com.prettybyte.simplebackend.lib.ktorgraphql.schema
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import com.expediagroup.graphql.types.operations.Mutation
+import com.prettybyte.simplebackend.SingletonStuff
 import com.prettybyte.simplebackend.lib.*
 import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.allow
 import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.deny
@@ -14,8 +15,8 @@ import kotlinx.serialization.json.Json
 
 data class CreateEventResponse(val blockedByGuards: List<String>, val dryRun: Boolean, val modifiedModels: List<String>)
 
-class EventMutationService<E : IEvent>(
-    private val eventService: EventService<E>,
+class EventMutationService<E : IEvent, V>(
+    private val eventService: EventService<E, V>,
     private val eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,
     private val json: Json,
     private val eventAuthorizer: IEventAuthorizer<E>,
@@ -36,7 +37,7 @@ class EventMutationService<E : IEvent>(
             val event = eventParser(eventName, modelId, eventParametersJson, userIdentity.id)
             validateParams(event)
 
-            val authorizationRuleResults = AuthorizerRules.eventRules.map { it(userIdentity, event) }
+            val authorizationRuleResults = SingletonStuff.getEventRules<V>().map { it(userIdentity, event, SingletonStuff.getViews()) }
             if (authorizationRuleResults.any { it == deny } || authorizationRuleResults.none { it == allow }) {
                 return DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "Permission denied")).build()
             }

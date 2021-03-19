@@ -7,24 +7,28 @@ import graphql.GameQueryService
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import modelviews.GameView
+import modelviews.UserView
 import statemachines.createGameStateMachine
 import statemachines.userStateMachine
-import views.GameView
-import views.UserView
+
+val simpleBackend = SimpleBackend<Event, Views>()
 
 fun main() {
 
     val gameStateMachine = createGameStateMachine()
     gameStateMachine.onStateChange { makeComputerMove(it) }
 
-    SimpleBackend.setup(
+    val myViews = Views(GameView(), UserView())
+
+    simpleBackend.setup(
         databaseConnection = DatabaseConnection(url = "jdbc:sqlite:/home/linus/temp/simpleserverChess.db", driver = "org.sqlite.JDBC"),
         migrations = Migrations,
         eventParser = ::parseEvent,
         eventAuthorizer = EventAuthorizer,
         managedModels = setOf(
-            ManagedModel(UserProperties::class, userStateMachine(), UserView),
-            ManagedModel(GameProperties::class, gameStateMachine, GameView)
+            ManagedModel(UserProperties::class, userStateMachine(), myViews.user),
+            ManagedModel(GameProperties::class, gameStateMachine, myViews.game)
         ),
         port = 8080,
         serModule = SerializersModule {
@@ -34,12 +38,19 @@ fun main() {
             }
         },
         customGraphqlPackages = listOf("graphql"),
-        customQueries = listOf(TopLevelObject(GameQueryService())),
+        customQueries = listOf(TopLevelObject(GameQueryService(myViews))),
         authorizationReadRules = setOf(::`A user can read games where she is a player`, ::`Black victories cannot be read`),
-        authorizationEventRules = setOf(::`A user can create a game`, ::`A user can perform actions in a game where she is a player`),
+        authorizationEventRules = setOf(
+            ::`A user can be created`,
+            ::`A user can create a game`,
+            ::`A user can perform actions in a game where she is a player`
+        ),
+        views = myViews,
     )
-    SimpleBackend.start()
+    simpleBackend.start()
 }
+
+data class Views(val game: GameView<Views>, val user: UserView<Views>)
 
 
 /*

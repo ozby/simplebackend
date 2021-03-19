@@ -4,8 +4,6 @@ import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
 import statemachines.GameState
 import statemachines.GameState.*
-import statemachines.UserStates
-import views.UserView
 
 fun parseEvent(eventName: String, modelId: String, params: String, userIdentityId: String): Event {
     return when (eventName) {
@@ -22,19 +20,9 @@ fun parseEvent(eventName: String, modelId: String, params: String, userIdentityI
     }
 }
 
-/**
- * Returns user if state == active. Else null.
- */
-fun getActiveUserWithoutAuthorization(userIdentity: UserIdentity): Model<UserProperties>? {
-    val user = UserView.getWithoutAuthorization(userIdentity)
-    if (user?.state?.equals(UserStates.active.name) == true) {
-        return user
-    }
-    return null
-}
 
-fun `Can only create game where I am a player`(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
-    val user = UserView.getWithoutAuthorization(userIdentity) ?: return BlockedByGuard("User not found")
+fun `Can only create game where I am a player`(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity, views: Views): BlockedByGuard? {
+    val user = views.user.getWithoutAuthorization(userIdentity) ?: return BlockedByGuard("User not found")
     if ((event.getParams() as CreateGameParams).whitePlayerUserId != user.id) {
         return BlockedByGuard("You can only create new games where you are the white player")
     }

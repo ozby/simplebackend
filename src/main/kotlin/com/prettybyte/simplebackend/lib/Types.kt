@@ -1,6 +1,7 @@
 package com.prettybyte.simplebackend.lib
 
 import arrow.core.Either
+import com.prettybyte.simplebackend.SingletonStuff
 import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.allow
 import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.deny
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
@@ -9,10 +10,10 @@ import io.jsonwebtoken.Jws
 import kotlinx.serialization.Serializable
 import kotlin.reflect.KClass
 
-data class ManagedModel<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(
+data class ManagedModel<T : ModelProperties, E : IEvent, ModelStates : Enum<*>, V>(
     val kClass: KClass<T>,
-    val stateMachine: StateMachine<T, E, ModelStates>,
-    val view: IModelView<T>,
+    val stateMachine: StateMachine<T, E, ModelStates, V>,
+    val view: IModelView<T, V>,
 )
 
 @Serializable
@@ -26,8 +27,8 @@ data class Model<T : ModelProperties>(
 @Serializable
 abstract class ModelProperties
 
-interface IModelView<T : ModelProperties> {
-    fun get(id: String): ReadModelAuthorizer<T> {
+interface IModelView<T : ModelProperties, V> {
+    fun get(id: String): ReadModelAuthorizer<T, V> {
         return ReadModelAuthorizer(getWithoutAuthorization(id))
     }
 
@@ -37,13 +38,13 @@ interface IModelView<T : ModelProperties> {
     fun delete(id: String)
 }
 
-class ReadModelAuthorizer<T : ModelProperties>(private val value: Model<T>?) {
+class ReadModelAuthorizer<T : ModelProperties, V>(private val value: Model<T>?) {
 
     fun auth(userIdentity: UserIdentity): Either<Problem, Model<T>?> {
         if (value == null) {
             return Either.right(null)
         }
-        val authorizationRuleResults = AuthorizerRules.readModelRules.map { it(userIdentity, value) }
+        val authorizationRuleResults = SingletonStuff.getReadModelRules<V>().map { it(userIdentity, value, SingletonStuff.getViews()) }
         if (authorizationRuleResults.any { it == deny }) {
             return Either.left(Problem.unauthorized())  // TODO: tell the user which rule was violated?
         }
@@ -55,11 +56,11 @@ class ReadModelAuthorizer<T : ModelProperties>(private val value: Model<T>?) {
 
 }
 
-class ReadModelListAuthorizer<T : ModelProperties>(val theValueList: List<Model<T>>) {
+class ReadModelListAuthorizer<T : ModelProperties, V>(val theValueList: List<Model<T>>) {
 
     fun auth(userIdentity: UserIdentity): Either<Problem, List<Model<T>>?> {
         return Either.right(theValueList.filter { value ->
-            val authorizationRuleResults = AuthorizerRules.readModelRules.map { it(userIdentity, value) }
+            val authorizationRuleResults = SingletonStuff.getReadModelRules<V>().map { it(userIdentity, value, SingletonStuff.getViews()) }
             authorizationRuleResults.none { it == deny } && authorizationRuleResults.any { it == allow }
         })
     }

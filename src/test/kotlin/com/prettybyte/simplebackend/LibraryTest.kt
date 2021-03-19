@@ -6,14 +6,13 @@ package com.prettybyte.simplebackend
 import com.prettybyte.simplebackend.lib.IEvent
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.ModelProperties
-import com.prettybyte.simplebackend.lib.statemachine.State
 import kotlin.test.Test
 
 class LibraryTest {
     @Test
     fun testSomeLibraryMethod() {
-        val classUnderTest = State<Game, IEvent, GameStates>("my state")
-        classUnderTest.enterAction(::printGame)
+        //  val classUnderTest = State<Game, IEvent, GameStates,V>("my state")
+
     }
 }
 

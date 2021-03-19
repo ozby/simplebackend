@@ -3,8 +3,6 @@ import com.prettybyte.simplebackend.lib.AuthorizationRuleResult.*
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jws
 import statemachines.GameState
-import views.GameView
-import views.UserView
 
 object EventAuthorizer : IEventAuthorizer<Event> {
 
@@ -22,34 +20,37 @@ object EventAuthorizer : IEventAuthorizer<Event> {
         return true
     }
 
-    private fun hasRole(role: Roles, userIdentity: UserIdentity): Boolean {
-        return UserView.getWithoutAuthorization(userIdentity)?.properties?.roles?.contains(role) ?: false
-    }
-
 }
 
-fun `A user can read games where she is a player`(userIdentity: UserIdentity, model: Model<out ModelProperties>): AuthorizationRuleResult {
+fun `A user can read games where she is a player`(userIdentity: UserIdentity, model: Model<out ModelProperties>, views: Views): AuthorizationRuleResult {
     return when (model.properties) {
-        is GameProperties -> if (isPlayerInGame(userIdentity, model.id)) allow else noOpinion
+        is GameProperties -> if (isPlayerInGame(userIdentity, model.id, views)) allow else noOpinion
         else -> noOpinion
     }
 }
 
-fun `Black victories cannot be read`(userIdentity: UserIdentity, model: Model<out ModelProperties>): AuthorizationRuleResult {
+fun `Black victories cannot be read`(userIdentity: UserIdentity, model: Model<out ModelProperties>, views: Views): AuthorizationRuleResult {
     if (model.properties !is GameProperties) {
         return noOpinion
     }
     return if (GameState.valueOf(model.state) == GameState.`Black victory`) deny else noOpinion
 }
 
-fun `A user can perform actions in a game where she is a player`(userIdentity: UserIdentity, event: IEvent): AuthorizationRuleResult {
+fun `A user can perform actions in a game where she is a player`(userIdentity: UserIdentity, event: IEvent, views: Views): AuthorizationRuleResult {
     return when (event) {
-        is MakeMove, is ProposeDraw, is AcceptDraw, is DeclineDraw, is Resign -> if (isPlayerInGame(userIdentity, event.modelId!!)) allow else noOpinion
+        is MakeMove, is ProposeDraw, is AcceptDraw, is DeclineDraw, is Resign -> if (isPlayerInGame(userIdentity, event.modelId!!, views)) allow else noOpinion
         else -> noOpinion
     }
 }
 
-fun `A user can create a game`(userIdentity: UserIdentity, event: IEvent): AuthorizationRuleResult {
+fun `A user can be created`(userIdentity: UserIdentity, event: IEvent, views: Views): AuthorizationRuleResult {
+    if (event !is CreateUser) {
+        return noOpinion
+    }
+    return allow
+}
+
+fun `A user can create a game`(userIdentity: UserIdentity, event: IEvent, views: Views): AuthorizationRuleResult {
     if (event !is CreateGame) {
         return noOpinion
     }
@@ -57,8 +58,8 @@ fun `A user can create a game`(userIdentity: UserIdentity, event: IEvent): Autho
 }
 
 
-fun isPlayerInGame(userIdentity: UserIdentity, gameId: String): Boolean {
-    val user = UserView.getWithoutAuthorization(userIdentity) ?: return false
-    val game = GameView.getWithoutAuthorization(gameId) ?: return false
+fun isPlayerInGame(userIdentity: UserIdentity, gameId: String, views: Views): Boolean {
+    val user = views.user.getWithoutAuthorization(userIdentity) ?: return false
+    val game = views.game.getWithoutAuthorization(gameId) ?: return false
     return (user.id == game.properties.whitePlayerId || user.id == game.properties.blackPlayerId)
 }

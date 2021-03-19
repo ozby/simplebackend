@@ -1,13 +1,14 @@
-package views
+package modelviews
 
 import Event
 import GameProperties
-import com.prettybyte.simplebackend.SimpleBackend
+import Views
 import com.prettybyte.simplebackend.lib.IModelView
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.ReadModelListAuthorizer
+import simpleBackend
 
-object GameView : IModelView<GameProperties> {
+class GameView<V> : IModelView<GameProperties, V> {
 
     private val games = HashMap<String, Model<GameProperties>>()
 
@@ -25,19 +26,19 @@ object GameView : IModelView<GameProperties> {
         games.remove(id)
     }
 
-    fun getAll(): ReadModelListAuthorizer<GameProperties> {
+    fun getAll(): ReadModelListAuthorizer<GameProperties, V> {
         return ReadModelListAuthorizer(games.values.toList())
     }
 
-    fun history(id: String): List<String> {
-        return SimpleBackend.getEventsForModelId<Event>(id)
+    fun history(id: String, user: UserView<Views>): List<String> {
+        return simpleBackend.getEventsForModelId<Event, Views>(id)
             .map {
-                val userName = UserView.getByUserIdentityIdWithoutAuthorization(it.userIdentityId)?.properties?.firstName ?: it.userIdentityId
+                val userName = user.getByUserIdentityIdWithoutAuthorization(it.userIdentityId)?.properties?.firstName ?: it.userIdentityId
                 "$userName $it"
             }
     }
 
-    fun getAllWhereUserIsPlayer(userId: String): ReadModelListAuthorizer<GameProperties> {
+    fun getAllWhereUserIsPlayer(userId: String): ReadModelListAuthorizer<GameProperties, V> {
         return ReadModelListAuthorizer(games.values.filter { it.properties.whitePlayerId == userId || it.properties.blackPlayerId == userId })
     }
 

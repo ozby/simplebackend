@@ -2,6 +2,7 @@ package statemachines
 
 import Event
 import UserProperties
+import Views
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import com.prettybyte.simplebackend.lib.statemachine.stateMachine
 import hasNoOngoingGames
@@ -20,7 +21,7 @@ enum class UserStates {
     deleted,
 }
 
-fun userStateMachine(): StateMachine<UserProperties, Event, UserStates> =
+fun userStateMachine(): StateMachine<UserProperties, Event, UserStates, Views> =
 
     stateMachine {
         voidState {

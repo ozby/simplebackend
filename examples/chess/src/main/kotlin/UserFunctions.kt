@@ -5,11 +5,9 @@ import com.prettybyte.simplebackend.lib.BlockedByGuard
 import com.prettybyte.simplebackend.lib.EventParams
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
-import views.GameView
-import views.UserView
 
-fun hasNoOngoingGames(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
-    return when (val result = GameView.getAllWhereUserIsPlayer(getActiveUserWithoutAuthorization(userIdentity)?.id ?: "").auth(userIdentity)) {
+fun hasNoOngoingGames(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity, views: Views): BlockedByGuard? {
+    return when (val result = views.game.getAllWhereUserIsPlayer(views.user.getActiveUserWithoutAuthorization(userIdentity)?.id ?: "").auth(userIdentity)) {
         is Either.Left -> BlockedByGuard(result.a.message)
         is Either.Right -> if (result.b!!.isEmpty()) null else BlockedByGuard("Cannot delete user since he/she has ongoing games")
     }
@@ -25,12 +23,13 @@ fun updateRating(model: Model<UserProperties>, eventParams: EventParams): UserPr
     }
 }
 
-fun userNotAlreadyCreated(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+/*fun userNotAlreadyCreated(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
     if (UserView.getWithoutAuthorization(userIdentity) != null) {
         return BlockedByGuard("User already exist")
     }
     return null
 }
+ */
 
 fun createdByCorrectIdentity(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
     if (userIdentity.isSystem()) {

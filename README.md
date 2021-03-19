@@ -26,8 +26,8 @@ into a state machine.
 
 If you are not familiar with UML state machines you may want to look at https://en.wikipedia.org/wiki/UML_state_machine.
 
-The code you write is more functional and declarative than imperative. You will declare state machines using functions that you provide. The functions must not
-have any side effects (but they don't have to be pure since they may read the current state from views).
+The code you write is more functional and declarative than imperative. You will declare state machines using functions that you provide. The functions should be
+[pure](https://en.wikipedia.org/wiki/Pure_function).
 
 ### How do I access the database?
 
@@ -36,7 +36,7 @@ application can be restarted without loosing data). Benefits:
 
 * All you need is Kotlin, you don't have to know any SQL.
 * You don't have to write code to handle errors if the database is unresponsive.
-* Less boilerplate: you don't have to convert data to/from the database.
+* Less boilerplate: you don't have to convert data to/from the database. No ORM is needed.
 * Lower latency since you avoid the network request to the database.
 
 Note that blobs should not be stored in the memory (use e.g. a CDN instead).

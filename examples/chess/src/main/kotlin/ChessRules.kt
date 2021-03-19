@@ -3,35 +3,34 @@ import Board.Companion.squareToIndex
 import Color.black
 import Color.white
 import Piece.*
-import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.*
 import statemachines.GameState
 import statemachines.GameState.`Black turn`
 import statemachines.GameState.`White turn`
 
-fun `Event comes from white player`(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity): BlockedByGuard? {
+fun `Event comes from white player`(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity, views: Views): BlockedByGuard? {
     if (userIdentity.id == computerPlayer) {
         return null
     }
-    val user = getActiveUserWithoutAuthorization(userIdentity) ?: return BlockedByGuard("Can't find user")
+    val user = views.user.getActiveUserWithoutAuthorization(userIdentity) ?: return BlockedByGuard("Can't find user")
     if (game == null) {
         return BlockedByGuard("isCorrectPlayer: game was null")
     }
     return if (game.properties.whitePlayerId != user.id) BlockedByGuard("Not your turn") else null
 }
 
-fun `Event comes from black player`(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity): BlockedByGuard? {
+fun `Event comes from black player`(game: Model<GameProperties>?, event: IEvent, userIdentity: UserIdentity, views: Views): BlockedByGuard? {
     if (userIdentity.id == computerPlayer) {
         return null
     }
-    val user = getActiveUserWithoutAuthorization(userIdentity) ?: return BlockedByGuard("Can't find user")
+    val user = views.user.getActiveUserWithoutAuthorization(userIdentity) ?: return BlockedByGuard("Can't find user")
     if (game == null) {
         return BlockedByGuard("isCorrectPlayer: game was null")
     }
     return if (game.properties.blackPlayerId != user.id) BlockedByGuard("Not your turn") else null
 }
 
-fun `Validate move`(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+fun `Validate move`(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity, views: Views): BlockedByGuard? {
     val params = (event as MakeMove).getParams()
     if (model == null) {
         return BlockedByGuard("Game missing")
@@ -109,7 +108,7 @@ fun `Black can promote pawn`(model: Model<GameProperties>): Boolean {
     return model.properties.pieces.subList(0, 8).contains("bp")
 }
 
-fun `Is promotable piece`(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity): BlockedByGuard? {
+fun `Is promotable piece`(model: Model<GameProperties>?, event: Event, userIdentity: UserIdentity, views: Views): BlockedByGuard? {
     val piece = (event as PromotePawn).getParams().piece
     if (piece.length != 1) {
         return BlockedByGuard("Illegal piece")
@@ -320,7 +319,7 @@ private fun blackCanMoveTo(x: Int, y: Int, board: Board, gameId: String, exclude
 
 private fun pieceHasMovedFrom(x: Int, y: Int, gameId: String): Boolean {
     val squareName = Board.getSquareName(x, y)
-    return SimpleBackend.getEventsForModelId<Event>(gameId).any { it is MakeMove && it.getParams().from == squareName }
+    return simpleBackend.getEventsForModelId<Event, Views>(gameId).any { it is MakeMove && it.getParams().from == squareName }
 }
 
 private fun validMovesForRook(board: Board, x: Int, y: Int, color: Color): Set<Pair<String, String>> {

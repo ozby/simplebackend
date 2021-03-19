@@ -1,9 +1,10 @@
 import Board.Companion.squareToIndex
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
+import modelviews.GameView
+import modelviews.UserView
 import statemachines.GameState
 import statemachines.UserStates
-import views.UserView
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -35,12 +36,14 @@ class ChessRulesTest() {
     val moveA2A3Event = MakeMove(gameId = gameId, params = """{"from": "a2", "to": "a3"}""", userIdentityId1)
     val moveToIllegalSquareEvent = MakeMove(gameId = gameId, params = """{"from": "a2", "to": "j9"}""", userIdentityId1)
 
+    val views = Views(GameView(), UserView())
+
     @BeforeTest
     fun setupTest() {
-        if (UserView.getWithoutAuthorization(user1Id) == null) {
-            UserView.create(user1)
+        if (views.user.getWithoutAuthorization(user1Id) == null) {
+            views.user.create(user1)
         } else {
-            UserView.update(user1)
+            views.user.update(user1)
         }
     }
 
@@ -55,14 +58,14 @@ class ChessRulesTest() {
 
     @Test
     fun isCorrectPlayer() {
-        val problem = `Event comes from white player`(freshGameModel, moveA2A3Event, userIdentity1)
+        val problem = `Event comes from white player`(freshGameModel, moveA2A3Event, userIdentity1, views)
         assertTrue { problem == null }
     }
 
     @Test
     fun isValidMove() {
-        assertTrue { `Validate move`(freshGameModel, moveA2A3Event, userIdentity1) == null }
-        assertTrue { `Validate move`(freshGameModel, moveToIllegalSquareEvent, userIdentity1) != null }
+        assertTrue { `Validate move`(freshGameModel, moveA2A3Event, userIdentity1, views) == null }
+        assertTrue { `Validate move`(freshGameModel, moveToIllegalSquareEvent, userIdentity1, views) != null }
     }
 
     @Test

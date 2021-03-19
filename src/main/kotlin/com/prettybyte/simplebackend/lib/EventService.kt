@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.json.Json
 import simplebackend.EventGrpcKt
 import simplebackend.Simplebackend
 import java.time.Instant
@@ -21,14 +20,10 @@ import kotlin.system.exitProcess
 
 // TODO: Be conservative in what you send, be liberal in what you accept (?)
 
-class EventService<E : IEvent>(
-    private val eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,
+class EventService<E : IEvent, V>(
     private val eventStore: EventStore<E>,
-    private val stateMachineProvider: KFunction1<IEvent, StateMachine<*, E, *>>,
-    private val modelViewProvider: (String) -> IModelView<*>,
-    private val json: Json,
+    private val stateMachineProvider: KFunction1<IEvent, StateMachine<*, E, *, V>>,
     private val migrations: IMigrations<E>?,
-    private val managedModels: Set<ManagedModel<*, E, *>>,
 ) : EventGrpcKt.EventCoroutineImplBase() {
 
     private val stateFlow: MutableStateFlow<Simplebackend.EventUpdatedResponse> = MutableStateFlow(Simplebackend.EventUpdatedResponse.newBuilder().build())
@@ -138,6 +133,8 @@ class EventService<E : IEvent>(
         notifyListeners: Boolean = true,
         preventModelUpdates: Boolean,
     ): Either<Problem, List<Model<out ModelProperties>>> {
+        val secondaryEvents = mutableListOf<E>()
+        val updatedModels = mutableListOf<Model<out ModelProperties>>()
         mutex.withLock {
             val stateMachine = stateMachineProvider(event)  // one event may trigger many state machines ??
             if (!stateMachine.canHandle(event)) {
@@ -145,9 +142,6 @@ class EventService<E : IEvent>(
             }
 
             if (withGuards) {
-                if (userIdentity == null) {
-                    throw RuntimeException()
-                }
                 val failedGuards = stateMachine.preventedByGuards(event, userIdentity)
                 if (failedGuards.isNotEmpty()) {
                     return Left(Problem.preventedByGuard(failedGuards))
@@ -158,11 +152,16 @@ class EventService<E : IEvent>(
                 eventStore.store(event, eventParametersJson)    // TODO: ugly!
             }
 
-            val eventResult = stateMachine.eventOccurred(event, preventModelUpdates = preventModelUpdates, performActions = performActions)
+            val eventResult = stateMachine.eventOccurred(
+                event,
+                preventModelUpdates = preventModelUpdates,
+                performActions = performActions
+            )
             when (eventResult) {
                 is Left -> return eventResult
                 is Right -> {
-                    val updatedModels = eventResult.b
+                    secondaryEvents.addAll(eventResult.b.second)
+                    updatedModels.addAll(eventResult.b.first)
                     if (notifyListeners && !preventModelUpdates) {
                         GlobalScope.launch {
                             updatedModels.forEach {
@@ -181,10 +180,21 @@ class EventService<E : IEvent>(
                                     .build()
                         }
                     }
-                    return eventResult
                 }
             }
         }
+        secondaryEvents.forEach {       // TODO: we have just released the mutex lock. Theoretically, another event can squeeze itself in before all secondary events has been processed.
+            process(
+                it,
+                it.params,
+                userIdentity = UserIdentity.system(),
+                performActions = performActions,
+                preventModelUpdates = preventModelUpdates,
+                storeEvent = false
+            )
+
+        }
+        return Either.right(updatedModels)
     }
 
 }

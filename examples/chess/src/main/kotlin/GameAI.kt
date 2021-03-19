@@ -1,4 +1,3 @@
-import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.UserIdentity
 import kotlinx.coroutines.delay
@@ -20,7 +19,7 @@ suspend fun makeComputerMove(model: Model<GameProperties>) {
 private fun declineDraw(model: Model<GameProperties>) {
     val params = """{"test": ""}"""
     val event = DeclineDraw(gameId = model.id, params = params, userIdentityId = computerPlayer)
-    SimpleBackend.processEvent(
+    simpleBackend.processEvent(
         event,
         eventParametersJson = params,
         userIdentity = UserIdentity(computerPlayer),
@@ -33,7 +32,7 @@ private fun declineDraw(model: Model<GameProperties>) {
 private fun promotePawn(model: Model<GameProperties>) {
     val params = """{"piece": "q"}"""
     val event = PromotePawn(gameId = model.id, params = params, userIdentityId = computerPlayer)
-    SimpleBackend.processEvent(
+    simpleBackend.processEvent(
         event,
         eventParametersJson = params,
         userIdentity = UserIdentity(computerPlayer),
@@ -46,11 +45,11 @@ private fun promotePawn(model: Model<GameProperties>) {
 private fun calculateMove(model: Model<GameProperties>) {
     // first see if we should propose draw
     if (whiteIsAhead(model) &&
-        !SimpleBackend.getEventsForModelId<Event>(model.id).any { it.name == proposeDraw }
+        !simpleBackend.getEventsForModelId<Event, Views>(model.id).any { it.name == proposeDraw }
     ) {
         val params = """{"test": ""}"""
         val event = ProposeDraw(gameId = model.id, params = params, userIdentityId = computerPlayer)
-        SimpleBackend.processEvent(
+        simpleBackend.processEvent(
             event,
             eventParametersJson = params,
             userIdentity = UserIdentity(computerPlayer),
@@ -71,7 +70,7 @@ private fun calculateMove(model: Model<GameProperties>) {
     val selectedMove = scoredMoves.filter { it.second == maxScore }.random(rnd).first
     val params = """{"from": "${selectedMove.first}", "to": "${selectedMove.second}"}"""
     val event = MakeMove(gameId = model.id, params = params, userIdentityId = computerPlayer)
-    SimpleBackend.processEvent(
+    simpleBackend.processEvent(
         event,
         eventParametersJson = params,
         userIdentity = UserIdentity(computerPlayer),

@@ -4,11 +4,11 @@ import com.prettybyte.simplebackend.lib.IEvent
 import com.prettybyte.simplebackend.lib.Model
 import com.prettybyte.simplebackend.lib.ModelProperties
 
-class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: String) {
+class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>, V>(val name: String) {
 
     internal var enterBlock: Block<T, E> = Block()
     internal var exitBlock: Block<T, E> = Block()
-    internal val transitions = mutableListOf<Transition<T, E, ModelStates>>()
+    internal val transitions = mutableListOf<Transition<T, E, ModelStates, V>>()
     internal val onEventBlocks = mutableListOf<Pair<String, BlockWithGuards<T, E>>>()
 
     fun onEnter(init: Block<T, E>.() -> Unit) {
@@ -31,14 +31,14 @@ class State<T : ModelProperties, E : IEvent, ModelStates : Enum<*>>(val name: St
         triggeredByEvent: String? = null,
         triggeredIf: ((Model<T>) -> Boolean)? = null,
         targetState: ModelStates,
-        init: Transition<T, E, ModelStates>.() -> Unit
+        init: Transition<T, E, ModelStates, V>.() -> Unit
     ) {  // TODO: triggeredByEvent should be E
-        val transition = Transition<T, E, ModelStates>(triggeredByEvent, triggeredIf, targetState)
+        val transition = Transition<T, E, ModelStates, V>(triggeredByEvent, triggeredIf, targetState)
         transition.init()
         transitions.add(transition)
     }
 
-    internal fun getTransitionForEvent(event: IEvent): Transition<T, E, ModelStates>? {
+    internal fun getTransitionForEvent(event: IEvent): Transition<T, E, ModelStates, V>? {
         return transitions.firstOrNull() { it.canBeTriggeredByEvent(event) }
     }
 

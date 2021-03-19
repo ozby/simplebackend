@@ -2,6 +2,7 @@ package statemachines
 
 import Event
 import GameProperties
+import Views
 import `Automatic draw`
 import `Black can promote pawn`
 import `Black is checkmate`
@@ -39,7 +40,7 @@ enum class GameState {
     `Black has proposed draw`,
 }
 
-fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState> =
+fun createGameStateMachine(): StateMachine<GameProperties, Event, GameState, Views> =
 
     stateMachine {
         voidState {
