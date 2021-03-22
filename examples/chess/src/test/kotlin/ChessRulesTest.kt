@@ -19,7 +19,6 @@ class ChessRulesTest() {
         properties = UserProperties(
             firstName = "Adam",
             lastName = "Adamsson",
-            roles = emptySet(),
             userIdentityId = userIdentityId1,
             victories = 0,
             defeats = 0,
