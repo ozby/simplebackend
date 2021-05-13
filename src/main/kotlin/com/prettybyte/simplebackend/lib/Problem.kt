@@ -1,9 +1,5 @@
 package com.prettybyte.simplebackend.lib
 
-import graphql.ErrorClassification
-import graphql.GraphQLError
-import graphql.language.SourceLocation
-
 enum class Status {
     INVALID_ARGUMENT,
     FAILED_PRECONDITION,
@@ -11,7 +7,7 @@ enum class Status {
     UNAUTHORIZED,
 }
 
-class Problem(private val status: Status, private val errorMessage: String = "") : GraphQLError {
+class Problem(private val status: Status, private val errorMessage: String = "") {
 
     fun asException(): Exception = RuntimeException(errorMessage)
 
@@ -41,17 +37,4 @@ class Problem(private val status: Status, private val errorMessage: String = "")
         return errorMessage
     }
 
-    override fun getMessage(): String {
-        return errorMessage
-    }
-
-    override fun getLocations(): MutableList<SourceLocation> {
-        return mutableListOf()
-    }
-
-    override fun getErrorType(): ErrorClassification {
-        return MyErrorClassification()
-    }
 }
-
-private class MyErrorClassification : ErrorClassification

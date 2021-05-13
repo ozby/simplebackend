@@ -1,12 +1,12 @@
 package graphql
 
+import AuthorizedContext
 import GameProperties
 import Views
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import com.expediagroup.graphql.types.operations.Query
 import com.prettybyte.simplebackend.lib.Model
-import com.prettybyte.simplebackend.lib.ktorgraphql.AuthorizedContext
 import simpleBackend
 
 class GameQueryService(private val views: Views) : Query {

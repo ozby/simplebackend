@@ -1,5 +1,6 @@
 package com.prettybyte.simplebackend.lib.ktorgraphql
 
+import AuthorizedContext
 import com.expediagroup.graphql.server.execution.GraphQLContextFactory
 import com.prettybyte.simplebackend.lib.UserIdentity
 import io.jsonwebtoken.Claims

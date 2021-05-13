@@ -47,6 +47,12 @@ dependencies {
     implementation("io.grpc:grpc-kotlin-stub:$grpcKotlinVersion")
     //implementation("javax.annotation:javax.annotation-api:1.3.2")
     runtimeOnly("io.grpc:grpc-netty:$grpcVersion")
+
+    implementation("io.ktor:ktor-server-core:$ktorVersion")
+    api("io.ktor:ktor-server-netty:$ktorVersion")
+    api("com.expediagroup:graphql-kotlin-server:$graphqlKotlinVersion")
+    implementation("com.expediagroup:graphql-kotlin-schema-generator:$graphqlKotlinVersion")
+
 }
 
 tasks.test {

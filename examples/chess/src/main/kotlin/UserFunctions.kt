@@ -6,7 +6,7 @@ import com.prettybyte.simplebackend.lib.UserIdentity
 
 fun hasNoOngoingGames(model: Model<UserProperties>?, event: Event, userIdentity: UserIdentity, views: Views): BlockedByGuard? {
     return when (val result = views.game.getAllWhereUserIsPlayer(views.user.getActiveUserWithoutAuthorization(userIdentity)?.id ?: "").auth(userIdentity)) {
-        is Either.Left -> BlockedByGuard(result.a.message)
+        is Either.Left -> BlockedByGuard(result.a.toString())
         is Either.Right -> if (result.b!!.isEmpty()) null else BlockedByGuard("Cannot delete user since he/she has ongoing games")
     }
 }

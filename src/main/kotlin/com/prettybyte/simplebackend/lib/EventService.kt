@@ -4,7 +4,10 @@ import arrow.core.Either
 import arrow.core.Either.Left
 import arrow.core.Either.Right
 import arrow.core.Left
+import com.prettybyte.simplebackend.SingletonStuff
 import com.prettybyte.simplebackend.lib.MigrationAction.*
+import com.prettybyte.simplebackend.lib.NegativeAuthorization.deny
+import com.prettybyte.simplebackend.lib.PositiveAuthorization.allow
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
@@ -133,6 +136,21 @@ class EventService<E : IEvent, V>(
         notifyListeners: Boolean = true,
         preventModelUpdates: Boolean,
     ): Either<Problem, List<Model<out ModelProperties>>> {
+
+//        if (event.modelId.length < 36) {  // TODO: we should make it so that the id is generated on the backend
+        //          DataFetcherResult.newResult<CreateEventResponse>().error(Problem(Status.INVALID_ARGUMENT, "modelId is too short")).build()
+        //    }
+
+        validateParams(event)
+
+        val negativeAuthProblem = SingletonStuff.getEventNegativeRules<V, E>().firstOrNull { it(userIdentity, event, SingletonStuff.getViews()) == deny }
+        if (negativeAuthProblem != null) {
+            return Left(Problem(Status.UNAUTHORIZED, extractNameFromFunction(negativeAuthProblem)))
+        }
+        if (SingletonStuff.getEventPositiveRules<V, E>().none { it(userIdentity, event, SingletonStuff.getViews()) == allow }) {
+            return Left(Problem(Status.UNAUTHORIZED, "Event '${event.name}' was not created since no policy allowed the operation"))
+        }
+        
         val secondaryEvents = mutableListOf<E>()
         val updatedModels = mutableListOf<Model<out ModelProperties>>()
         mutex.withLock {
@@ -197,4 +215,19 @@ class EventService<E : IEvent, V>(
         return Either.right(updatedModels)
     }
 
+    private fun validateParams(event: E) {
+        try {
+            event.getParams()
+        } catch (e: Exception) {
+            throw RuntimeException("At least one parameter is invalid or missing for event ${event.name}. The request contained these parameters: '${event.params}'  ${e.message}")
+        }
+    }
+
 }
+
+private fun extractNameFromFunction(f: Function<Any>): String {
+    val funString = f.toString()
+    val startIndex = funString.indexOf("`") + 1
+    return funString.substring(startIndex, funString.indexOf("`", startIndex + 1))
+}
+

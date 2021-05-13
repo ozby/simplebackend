@@ -53,10 +53,6 @@ dependencies {
 //    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
-    implementation("io.ktor:ktor-server-core:$ktorVersion")
-    api("io.ktor:ktor-server-netty:$ktorVersion")
-    api("com.expediagroup:graphql-kotlin-server:$graphqlKotlinVersion")
-    implementation("com.expediagroup:graphql-kotlin-schema-generator:$graphqlKotlinVersion")
 
 
     implementation("io.grpc:grpc-kotlin-stub:$grpcKotlinVersion")

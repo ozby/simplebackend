@@ -1,24 +1,11 @@
 package com.prettybyte.simplebackend
 
 import arrow.core.Either
-import com.expediagroup.graphql.generator.TopLevelObject
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.prettybyte.simplebackend.lib.*
-import com.prettybyte.simplebackend.lib.ktorgraphql.GraphQLHelper
-import com.prettybyte.simplebackend.lib.ktorgraphql.getGraphQLServer
-import com.prettybyte.simplebackend.lib.ktorgraphql.schema.EventMutationService
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import io.grpc.Server
 import io.grpc.ServerBuilder
-import io.ktor.application.*
-import io.ktor.http.*
-import io.ktor.response.*
-import io.ktor.routing.*
-import io.ktor.server.engine.*
-import io.ktor.server.netty.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.modules.SerializersModule
 import kotlin.reflect.KClass
 
@@ -43,12 +30,9 @@ object SingletonStuff {
 internal class SimpleBackendWrapped<E : IEvent, V>(
     eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,      // TODO: reflection?
     private val managedModels: Set<ManagedModel<*, E, *, V>>,
-    port: Int,
     serModule: SerializersModule,   // TODO: ugly. Can reflection help?
     databaseConnection: DatabaseConnection,
     migrations: IMigrations<E>?,
-    customGraphqlPackages: List<String>,
-    customQueries: List<TopLevelObject>,
     authorizationReadPositiveRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> PositiveAuthorization>,
     authorizationReadNegativeRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> NegativeAuthorization>,
     authorizationEventPositiveRules: Set<(UserIdentity, E, V) -> PositiveAuthorization>,
@@ -56,8 +40,6 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
     views: V,
 ) {
     private var grpcServer: Server
-    private var ktorServer: NettyApplicationEngine
-    private val json: Json = Json { serializersModule = serModule }
 
     // private val grpcServer: Server
     private val eventStore: EventStore<E>
@@ -77,7 +59,7 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
         eventStore = EventStore(databaseConnection, eventParser)
         eventService = EventService(eventStore, ::stateMachineProvider, migrations)
         grpcServer =
-            ServerBuilder.forPort(port + 1)
+            ServerBuilder.forPort(8081)
                 // .useTransportSecurity() TODO 1.0
                 //  .intercept(AuthenticationInterceptor)
                 // .intercept(UserIdentityInjector)
@@ -86,28 +68,6 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
                 .build()
         //
 
-
-        val mapper = jacksonObjectMapper()
-        val server =
-            getGraphQLServer(   // TODO: add interceptor that blocks if an event is currently processing (?)
-                mapper,
-                customGraphqlPackages,
-                customQueries,
-                listOf(TopLevelObject(EventMutationService(eventService, eventParser, json)))
-            )
-        val handler = GraphQLHelper(server, mapper)
-
-        ktorServer = embeddedServer(Netty, port) {
-            routing {
-                post("graphql") {
-                    handler.handle(this.call)
-                }
-
-                get("playground") {
-                    this.call.respondText(buildPlaygroundHtml("graphql", "subscriptions"), ContentType.Text.Html)
-                }
-            }
-        }
     }
 
     private fun modelViewProvider(modelType: String): IModelView<*, V> {
@@ -122,7 +82,6 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
     fun start() {
         eventService.start()
         grpcServer.start()
-        ktorServer.start(wait = true)
         // Runtime.getRuntime().addShutdownHook(Thread { this@simplebackend.SimpleBackend.stop() })
         //grpcServer.start()
         // println("Server started, listening on $port")
@@ -142,8 +101,8 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
         performActions: Boolean,
         preventModelUpdates: Boolean,
         storeEvent: Boolean
-    ) {
-        GlobalScope.launch {
+    ): Either<Problem, List<Model<out ModelProperties>>> {
+        return runBlocking {
             eventService.process(
                 event = event,
                 eventParametersJson = eventParametersJson,
@@ -178,61 +137,16 @@ fun logAndMakeInternalException(e: Exception): Throwable {
 
 data class DatabaseConnection(val url: String, val driver: String)
 
-private fun buildPlaygroundHtml(graphQLEndpoint: String, subscriptionsEndpoint: String) =
-    Application::class.java.classLoader.getResource("graphql-playground.html")?.readText()
-        ?.replace("\${graphQLEndpoint}", graphQLEndpoint)
-        ?.replace("\${subscriptionsEndpoint}", subscriptionsEndpoint)
-        ?: throw IllegalStateException("graphql-playground.html cannot be found in the classpath")
-
 class SimpleBackend<E : IEvent, V> {
-
-/*    fun setup(
-        eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,      // TODO: reflection?
-        eventAuthorizer: IEventAuthorizer<E>,
-        managedModels: Set<ManagedModel<*, E, *, V>>,
-        port: Int,
-        serModule: SerializersModule,   // TODO: ugly. Can reflection help?
-        databaseConnection: DatabaseConnection,
-        migrations: IMigrations<E>?,
-        customGraphqlPackages: List<String>,
-        customQueries: List<TopLevelObject>,
-        authorizationReadPositiveRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> PositiveAuthorization>,
-        authorizationReadNegativeRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> NegativeAuthorization>,
-        authorizationEventPositiveRules: Set<(UserIdentity, IEvent, V) -> PositiveAuthorization>,
-        authorizationEventNegativeRules: Set<(UserIdentity, IEvent, V) -> NegativeAuthorization>,
-        views: V
-    ) {
-        sb = SimpleBackendWrapped(
-            eventParser,
-            eventAuthorizer,
-            managedModels,
-            port,
-            serModule,
-            databaseConnection,
-            migrations,
-            customGraphqlPackages,
-            customQueries,
-            authorizationReadPositiveRules,
-            authorizationReadNegativeRules,
-            authorizationEventPositiveRules,
-            authorizationEventNegativeRules,
-            views,
-        )
-    }
-
- */
 
     fun setup(init: SimpleBackend<E, V>.() -> Unit) {
         this.init()
         sb = SimpleBackendWrapped(
             eventParserValue,
             managedModelsValue,
-            portValue!!,
             serModuleValue,
             dbConnectionValue,
             dbMigrationsValue,
-            graphQlPackagesValue,
-            graphQlQueriesValue,
             authorizationRulesBlock.readPositiveRules,
             authorizationRulesBlock.readNegativeRules,
             authorizationRulesBlock.eventPositiveRules,
@@ -243,12 +157,9 @@ class SimpleBackend<E : IEvent, V> {
 
     private lateinit var serModuleValue: SerializersModule
     private lateinit var authorizationRulesBlock: AuthorizationRulesBlock<E, V>
-    private lateinit var graphQlQueriesValue: List<TopLevelObject>
-    private lateinit var graphQlPackagesValue: List<String>
     private lateinit var managedModelsValue: Set<ManagedModel<*, E, *, V>>
     private lateinit var eventParserValue: (name: String, modelId: String, params: String, userIdentityId: String) -> E
     private lateinit var viewsValue: Any
-    private var portValue: Int? = null
     private lateinit var dbMigrationsValue: IMigrations<E>
     private lateinit var dbConnectionValue: DatabaseConnection
     private lateinit var sb: SimpleBackendWrapped<E, V>
@@ -260,7 +171,7 @@ class SimpleBackend<E : IEvent, V> {
         performActions: Boolean,
         preventModelUpdates: Boolean,
         storeEvent: Boolean
-    ) {
+    ): Either<Problem, List<Model<out ModelProperties>>> {
         return sb.processEvent(
             event,
             eventParametersJson,
@@ -295,10 +206,6 @@ class SimpleBackend<E : IEvent, V> {
         dbMigrationsValue = dbMigrations
     }
 
-    fun graphQlPort(port: Int) {
-        portValue = port
-    }
-
     fun views(views: Any) {
         viewsValue = views
     }
@@ -313,16 +220,6 @@ class SimpleBackend<E : IEvent, V> {
         managedModelsValue = block.value
     }
 
-    fun graphQlPackages(vararg packages: String) {
-        graphQlPackagesValue = packages.asList()
-    }
-
-    fun graphQlQueries(init: GraphQlQueriesBlock.() -> Unit) {
-        val block = GraphQlQueriesBlock()
-        block.init()
-        graphQlQueriesValue = block.value
-    }
-
     fun authorizationRules(init: AuthorizationRulesBlock<E, V>.() -> Unit) {
         authorizationRulesBlock = AuthorizationRulesBlock<E, V>()
         authorizationRulesBlock.init()
@@ -331,6 +228,7 @@ class SimpleBackend<E : IEvent, V> {
     fun serModule(ser: SerializersModule) {
         serModuleValue = ser
     }
+
 
     class ManagedModelsBlock<E : IEvent, V> {
 
@@ -344,14 +242,6 @@ class SimpleBackend<E : IEvent, V> {
             value.add(ManagedModel(clazz, stateMachine, view))
         }
 
-    }
-
-    class GraphQlQueriesBlock {
-        val value = mutableListOf<TopLevelObject>()
-
-        fun add(tlo: TopLevelObject) {
-            value.add(tlo)
-        }
     }
 
     class AuthorizationRulesBlock<E, V> {
@@ -467,3 +357,4 @@ class TransitionDescription(private val transition: Transition<out ModelProperti
 
 
 // TODO: use DSL for SimpleBackend like we do with the state machines
+// TODO: add interceptor(?) that blocks if an event is currently processing (?)

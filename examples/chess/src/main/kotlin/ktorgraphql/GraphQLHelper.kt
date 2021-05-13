@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import io.ktor.application.*
 import io.ktor.http.*
 import io.ktor.response.*
+import ktorgraphql.KtorGraphQLServer
 
 class GraphQLHelper(private val ktorGraphQLServer: KtorGraphQLServer, private val mapper: ObjectMapper) {
 

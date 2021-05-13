@@ -1,10 +1,21 @@
 import com.expediagroup.graphql.generator.TopLevelObject
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.prettybyte.simplebackend.SimpleBackend
 import com.prettybyte.simplebackend.lib.ModelProperties
+import com.prettybyte.simplebackend.lib.ktorgraphql.GraphQLHelper
 import graphql.GameQueryService
+import io.ktor.application.*
+import io.ktor.http.*
+import io.ktor.response.*
+import io.ktor.routing.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
+import ktorgraphql.getGraphQLServer
+import ktorgraphql.schema.EventMutationService
 import modelviews.GameView
 import modelviews.UserView
 import statemachines.createGameStateMachine
@@ -24,14 +35,11 @@ fun main(args: Array<String>) {
     val gameStateMachine = createGameStateMachine()
     val myViews = Views(GameView(), UserView())
 
+    val serModule = createSerModule()
+
     simpleBackend.setup {
         databaseConnection(url = args[0], driver = args[1])
         databaseMigrations(Migrations)
-        graphQlPort(8080)
-        graphQlPackages("graphql")
-        graphQlQueries {
-            add(TopLevelObject(GameQueryService(myViews)))
-        }
         eventParser(::parseEvent)
         managedModels {
             model(UserProperties::class, userStateMachine(), myViews.user)
@@ -59,12 +67,40 @@ fun main(args: Array<String>) {
             }
 
         }
-        serModule(createSerModule())
+        serModule(serModule)
     }
 
     gameStateMachine.onStateChange { makeComputerMove(it) }
 
     simpleBackend.start()
+
+    val jsonMapper = Json { serializersModule = serModule }
+
+    val mapper = jacksonObjectMapper()
+    val server =
+        getGraphQLServer(
+            mapper,
+            listOf("graphql"),
+            listOf(TopLevelObject(GameQueryService(myViews))),
+            listOf(TopLevelObject(EventMutationService<Event, Views>(simpleBackend, ::parseEvent, jsonMapper)))
+        )
+    val handler = GraphQLHelper(server, mapper)
+
+    val ktorServer = embeddedServer(Netty, 8080) {
+        routing {
+            post("graphql") {
+                handler.handle(this.call)
+            }
+
+            get("playground") {
+                this.call.respondText(buildPlaygroundHtml("graphql", "subscriptions"), ContentType.Text.Html)
+            }
+        }
+    }
+
+    ktorServer.start(wait = true)
+
+
 }
 
 fun createSerModule(): SerializersModule =
@@ -76,3 +112,9 @@ fun createSerModule(): SerializersModule =
     }
 
 data class Views(val game: GameView<Views>, val user: UserView<Views>)
+
+private fun buildPlaygroundHtml(graphQLEndpoint: String, subscriptionsEndpoint: String) =
+    Application::class.java.classLoader.getResource("graphql-playground.html")?.readText()
+        ?.replace("\${graphQLEndpoint}", graphQLEndpoint)
+        ?.replace("\${subscriptionsEndpoint}", subscriptionsEndpoint)
+        ?: throw IllegalStateException("graphql-playground.html cannot be found in the classpath")
