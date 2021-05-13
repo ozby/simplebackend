@@ -89,7 +89,7 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
 
         val mapper = jacksonObjectMapper()
         val server =
-            getGraphQLServer(
+            getGraphQLServer(   // TODO: add interceptor that blocks if an event is currently processing (?)
                 mapper,
                 customGraphqlPackages,
                 customQueries,

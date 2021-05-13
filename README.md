@@ -18,6 +18,7 @@ Suitable for systems:
 * Low latency is important
 * Not expected to have millions of users
 * Uptime is not super important
+* The possible model states and transitions are known
 
 ### Important patterns
 

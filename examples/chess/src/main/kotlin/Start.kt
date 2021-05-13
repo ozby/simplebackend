@@ -44,7 +44,7 @@ fun main(args: Array<String>) {
                     rule(::`A user can read games where she is a player`)
                 }
                 negative {
-                    rule(::`Black victories cannot be read`)
+                    //           rule(::`Black victories cannot be read`)
                 }
             }
             events {

@@ -16,7 +16,7 @@ data class ManagedModel<T : ModelProperties, E : IEvent, ModelStates : Enum<*>, 
     val view: IModelView<T, V>,
 )
 
-@Serializable
+@Serializable   // TODO: is Serializable necessary? In Java, Serializable is not a good idea...
 data class Model<T : ModelProperties>(
     val id: String,
     val state: String,

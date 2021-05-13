@@ -7,28 +7,27 @@ import com.google.protobuf.gradle.protoc
 import org.gradle.kotlin.dsl.proto
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
-plugins {
-    kotlin("jvm") version "1.4.31"
-    kotlin("plugin.serialization") version "1.4.31"
-    `java-library`
-    id("com.google.protobuf") version "0.8.14"
-}
-
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.kotlinOptions.useIR = true
-
-version = "0.1.0"
-group = "com.prettybyte"
-
 val coroutinesVersion = "1.4.2"
 val arrow_version = "0.11.0"
 val exposedVersion = "0.28.1"
 val ktorVersion = "1.5.1"
 val graphqlKotlinVersion = "4.0.0-alpha.14"
-
 val grpcVersion = "1.34.0"
 val grpcKotlinVersion = "1.0.0"
 val protobufVersion = "3.14.0"
+
+plugins {
+    kotlin("jvm") version "1.5.0"
+    kotlin("plugin.serialization") version "1.5.0"
+    `java-library`
+    id("com.google.protobuf") version "0.8.14"
+}
+
+val compileKotlin: KotlinCompile by tasks
+
+version = "0.1.0"
+group = "com.prettybyte"
+
 
 repositories {
     mavenCentral()
@@ -42,7 +41,7 @@ dependencies {
     implementation("javax.annotation:javax.annotation-api:1.3.2")
     implementation("io.arrow-kt:arrow-core:$arrow_version")
     implementation("io.arrow-kt:arrow-syntax:$arrow_version")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.0.1")        // TODO: Update to >= 1.2.0
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
@@ -51,7 +50,7 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-api:0.11.2")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.2")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.4.21")
+//    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     implementation("io.ktor:ktor-server-core:$ktorVersion")
