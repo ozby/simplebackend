@@ -71,9 +71,9 @@ class ReadModelListAuthorizer<T : ModelProperties, V>(val valueList: List<Model<
 
 }
 
-interface IEvent {
+interface IEvent {  // TODO: parse, don't validate? So none of these should be String or Int. See e.g. https://github.com/parsix/parsix
     val schemaVersion: Int
-    val modelId: String?
+    val modelId: String?    // TODO: should be Long? ! And it should be created on the backend? (but before it is saved to the db).
     val name: String
     val params: String
     val userIdentityId: String

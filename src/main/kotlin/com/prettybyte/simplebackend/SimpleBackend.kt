@@ -1,6 +1,7 @@
 package com.prettybyte.simplebackend
 
 import arrow.core.Either
+import arrow.core.Left
 import com.prettybyte.simplebackend.lib.*
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import io.grpc.Server
@@ -172,6 +173,10 @@ class SimpleBackend<E : IEvent, V> {
         preventModelUpdates: Boolean,
         storeEvent: Boolean
     ): Either<Problem, List<Model<out ModelProperties>>> {
+        if (sb == null) {
+            print("ERROR: you must first call setup()")
+            return Left(Problem(Status.FAILED_PRECONDITION, "SimpleBackend has not been initialized. You must first call setup()"))
+        }
         return sb.processEvent(
             event,
             eventParametersJson,
