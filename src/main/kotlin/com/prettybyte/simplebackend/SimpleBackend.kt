@@ -4,8 +4,6 @@ import arrow.core.Either
 import arrow.core.Left
 import com.prettybyte.simplebackend.lib.*
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
-import io.grpc.Server
-import io.grpc.ServerBuilder
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.modules.SerializersModule
 import kotlin.reflect.KClass
@@ -31,8 +29,8 @@ object SingletonStuff {
 internal class SimpleBackendWrapped<E : IEvent, V>(
     eventParser: (name: String, modelId: String, params: String, userIdentityId: String) -> E,      // TODO: reflection?
     private val managedModels: Set<ManagedModel<*, E, *, V>>,
+    private val eventStore: IEventStore<E>,
     serModule: SerializersModule,   // TODO: ugly. Can reflection help?
-    databaseConnection: DatabaseConnection,
     migrations: IMigrations<E>?,
     authorizationReadPositiveRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> PositiveAuthorization>,
     authorizationReadNegativeRules: Set<(UserIdentity, Model<out ModelProperties>, V) -> NegativeAuthorization>,
@@ -40,10 +38,6 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
     authorizationEventNegativeRules: Set<(UserIdentity, E, V) -> NegativeAuthorization>,
     views: V,
 ) {
-    private var grpcServer: Server
-
-    // private val grpcServer: Server
-    private val eventStore: EventStore<E>
     private val eventService: EventService<E, V>
 
     init {
@@ -57,17 +51,7 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
 
         managedModels.forEach { it.stateMachine.setView(it.view) }
 
-        eventStore = EventStore(databaseConnection, eventParser)
         eventService = EventService(eventStore, ::stateMachineProvider, migrations)
-        grpcServer =
-            ServerBuilder.forPort(8081)
-                // .useTransportSecurity() TODO 1.0
-                //  .intercept(AuthenticationInterceptor)
-                // .intercept(UserIdentityInjector)
-                // .addService(AuthenticationService(authorizer))
-                .addService(eventService)
-                .build()
-        //
 
     }
 
@@ -82,11 +66,7 @@ internal class SimpleBackendWrapped<E : IEvent, V>(
 
     fun start() {
         eventService.start()
-        grpcServer.start()
         // Runtime.getRuntime().addShutdownHook(Thread { this@simplebackend.SimpleBackend.stop() })
-        //grpcServer.start()
-        // println("Server started, listening on $port")
-        //grpcServer.awaitTermination()
         // TODO: make snapshot of Views?
     }
 
@@ -145,8 +125,8 @@ class SimpleBackend<E : IEvent, V> {
         sb = SimpleBackendWrapped(
             eventParserValue,
             managedModelsValue,
+            eventStoreValue,
             serModuleValue,
-            dbConnectionValue,
             dbMigrationsValue,
             authorizationRulesBlock.readPositiveRules,
             authorizationRulesBlock.readNegativeRules,
@@ -162,7 +142,7 @@ class SimpleBackend<E : IEvent, V> {
     private lateinit var eventParserValue: (name: String, modelId: String, params: String, userIdentityId: String) -> E
     private lateinit var viewsValue: Any
     private lateinit var dbMigrationsValue: IMigrations<E>
-    private lateinit var dbConnectionValue: DatabaseConnection
+    private lateinit var eventStoreValue: IEventStore<E>
     private lateinit var sb: SimpleBackendWrapped<E, V>
 
     fun processEvent(
@@ -203,8 +183,8 @@ class SimpleBackend<E : IEvent, V> {
      */
 
 
-    fun databaseConnection(url: String, driver: String) {
-        dbConnectionValue = DatabaseConnection(url, driver)
+    fun persistence(eventStore: IEventStore<E>) {
+        eventStoreValue = eventStore
     }
 
     fun databaseMigrations(dbMigrations: IMigrations<E>) {

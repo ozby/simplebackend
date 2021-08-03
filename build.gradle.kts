@@ -1,10 +1,3 @@
-import com.google.protobuf.gradle.generateProtoTasks
-import com.google.protobuf.gradle.id
-import com.google.protobuf.gradle.ofSourceSet
-import com.google.protobuf.gradle.plugins
-import com.google.protobuf.gradle.protobuf
-import com.google.protobuf.gradle.protoc
-import org.gradle.kotlin.dsl.proto
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 val coroutinesVersion = "1.4.2"
@@ -26,7 +19,7 @@ plugins {
 
 val compileKotlin: KotlinCompile by tasks
 
-version = "1.2.1"
+version = "0.1.1"
 //group = "com.prettybyte"
 
 
@@ -46,21 +39,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
-    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    implementation("org.xerial:sqlite-jdbc:3.34.0")
-    implementation("io.jsonwebtoken:jjwt-api:0.11.2")
-    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.2")
-    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.2")
-//    implementation("org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
-
-
-    implementation("io.grpc:grpc-kotlin-stub:$grpcKotlinVersion")
-    //implementation("javax.annotation:javax.annotation-api:1.3.2")
-    runtimeOnly("io.grpc:grpc-netty:$grpcVersion")
 }
 
 java {
@@ -82,45 +62,10 @@ tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "1.8"
 }
 
-sourceSets {
-    main {
-        proto {
-            srcDir("src/main/kotlin/com/prettybyte/simplebackend/lib/proto")
-        }
-        java {
-            srcDirs("build/generated/source/proto/main/grpc")
-            srcDirs("build/generated/source/proto/main/java")
-            srcDirs("build/generated/source/proto/main/grpckt")
-        }
-    }
-}
-
-protobuf {
-    protoc {
-        artifact = "com.google.protobuf:protoc:$protobufVersion"
-    }
-    plugins {
-        id("grpc") {
-            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
-        }
-        id("grpckt") {
-            artifact = "io.grpc:protoc-gen-grpc-kotlin:$grpcKotlinVersion:jdk7@jar"
-        }
-    }
-    generateProtoTasks {
-        ofSourceSet("main").forEach {
-            it.plugins {
-                id("grpc")
-                id("grpckt")
-            }
-        }
-    }
-}
-
 publishing {
     publications {
         create<MavenPublication>("maven") {
-            groupId = "com.prettybyte"
+            groupId = "com.prettybyte.simplebackend"
             artifactId = "simplebackend"
             version = "0.1.3"
 

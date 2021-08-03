@@ -10,26 +10,21 @@ import com.prettybyte.simplebackend.lib.NegativeAuthorization.deny
 import com.prettybyte.simplebackend.lib.PositiveAuthorization.allow
 import com.prettybyte.simplebackend.lib.statemachine.StateMachine
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import simplebackend.EventGrpcKt
-import simplebackend.Simplebackend
-import java.time.Instant
 import kotlin.reflect.KFunction1
 import kotlin.system.exitProcess
 
 // TODO: Be conservative in what you send, be liberal in what you accept (?)
 
 class EventService<E : IEvent, V>(
-    private val eventStore: EventStore<E>,
+    private val eventStore: IEventStore<E>,
     private val stateMachineProvider: KFunction1<IEvent, StateMachine<*, E, *, V>>,
     private val migrations: IMigrations<E>?,
-) : EventGrpcKt.EventCoroutineImplBase() {
+) {
 
-    private val stateFlow: MutableStateFlow<Simplebackend.EventUpdatedResponse> = MutableStateFlow(Simplebackend.EventUpdatedResponse.newBuilder().build())
+    //  private val stateFlow: MutableStateFlow<Simplebackend.EventUpdatedResponse> = MutableStateFlow(Simplebackend.EventUpdatedResponse.newBuilder().build())
 
     internal fun start() {
         migrateObsoleteEvents()
@@ -119,10 +114,12 @@ class EventService<E : IEvent, V>(
         }
     }
 
-    override fun subscribe(request: Simplebackend.SubscriptionRequest): Flow<Simplebackend.EventUpdatedResponse> {
+/*    override fun subscribe(request: Simplebackend.SubscriptionRequest): Flow<Simplebackend.EventUpdatedResponse> {
         println("Client subscribed")
         return stateFlow
     }
+
+ */
 
     private val mutex = Mutex()
 
@@ -150,7 +147,7 @@ class EventService<E : IEvent, V>(
         if (SingletonStuff.getEventPositiveRules<V, E>().none { it(userIdentity, event, SingletonStuff.getViews()) == allow }) {
             return Left(Problem(Status.UNAUTHORIZED, "Event '${event.name}' was not created since no policy allowed the operation"))
         }
-        
+
         val secondaryEvents = mutableListOf<E>()
         val updatedModels = mutableListOf<Model<out ModelProperties>>()
         mutex.withLock {
@@ -190,12 +187,14 @@ class EventService<E : IEvent, V>(
                     }
                     if (!preventModelUpdates) {
                         updatedModels.forEach {
-                            stateFlow.value =
+                            // TODO: notify listeners
+/*                            stateFlow.value =
                                 Simplebackend.EventUpdatedResponse.newBuilder()
                                     .setType(it.graphQlName)
                                     .setId(it.id)
                                     .setTimestamp(Instant.now().toEpochMilli())
                                     .build()
+ */
                         }
                     }
                 }

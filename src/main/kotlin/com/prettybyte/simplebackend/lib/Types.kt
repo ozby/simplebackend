@@ -121,3 +121,10 @@ enum class MigrationAction {        // TODO: try using sealed classes instead so
 
 data class BlockedByGuard(val message: String)
 
+interface IEventStore<E : IEvent> {
+    fun store(event: E, eventParametersJson: String)
+    fun readAllEvents(): List<E>
+    fun readAllEventsRaw(): List<RawEvent>
+    fun delete(eventId: Int)
+    fun update(eventId: Int, migratedEvent: E)
+}
